@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<item value="C:\Users\Ahmed.Youssef\Desktop\w3_802.11_EDK_v0.71_beta\SDK_Workspace\wlan_xps_v35_hw_platform\system_bd.bmm" key="wlan_xps_v35_hw_platform-bmmFile"/>
+	<item value="C:\Users\Ahmed.Youssef\Desktop\w3_802.11_EDK_v0.71_beta\SDK_Workspace\wlan_xps_v35_hw_platform\system.bit" key="wlan_xps_v35_hw_platform-bitFile"/>
+	<item value="C:\Users\Ahmed.Youssef\Desktop\w3_802.11_EDK_v0.71_beta\SDK_Workspace\wlan_mac_high_ap\Debug\wlan_mac_high_ap.elf" key="wlan_xps_v35_hw_platform-mb_high-initElf"/>
+	<item value="C:\Users\Ahmed.Youssef\Desktop\w3_802.11_EDK_v0.71_beta\SDK_Workspace\wlan_mac_low_dcf\Debug\wlan_mac_low_dcf.elf" key="wlan_xps_v35_hw_platform-mb_low-initElf"/>
+</section>

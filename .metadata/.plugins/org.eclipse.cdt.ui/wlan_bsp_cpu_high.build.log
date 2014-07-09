@@ -1,0 +1,47 @@
+make -k all 
+libgen -hw ../wlan_xps_v35_hw_platform/system.xml\
+	       -lp C:/Users/Ahmed.Youssef/Desktop/w3_802.11_EDK_v0.71_beta -lp C:/WARP_Repository/edk_user_repository\
+	       -pe mb_high \
+	       -log libgen.log \
+	       system.mss
+libgen
+Xilinx EDK 14.4 Build EDK_P.49d
+Copyright (c) 1995-2012 Xilinx, Inc.  All rights reserved.
+
+Command Line: libgen -hw ../wlan_xps_v35_hw_platform/system.xml -lp
+C:/Users/Ahmed.Youssef/Desktop/w3_802.11_EDK_v0.71_beta -lp
+C:/WARP_Repository/edk_user_repository -pe mb_high -log libgen.log system.mss 
+
+
+Staging source files.
+Running DRCs.
+XilNet DRC ...
+
+Running generate.
+Running post_generate.
+Running include - 'make -s include "COMPILER=mb-gcc" "ARCHIVER=mb-ar"
+"COMPILER_FLAGS=-mlittle-endian -mno-xl-soft-mul -mxl-barrel-shift
+-mxl-pattern-compare -mcpu=v8.40.b  -O2 -c" "EXTRA_COMPILER_FLAGS=-g"'.
+
+Running libs - 'make -s libs "COMPILER=mb-gcc" "ARCHIVER=mb-ar"
+"COMPILER_FLAGS=-mlittle-endian -mno-xl-soft-mul -mxl-barrel-shift
+-mxl-pattern-compare -mcpu=v8.40.b  -O2 -c" "EXTRA_COMPILER_FLAGS=-g"'.
+"Compiling common"
+"Compiling llfifo"
+"Compiling standalone";
+"Compiling axicdma"
+"Compiling v6_ddrx"
+"Compiling axiethernet"
+"Compiling llfifo"
+"Compiling bram"
+"Compiling axidma"
+"Compiling intc"
+"Compiling gpio"
+"Compiling tmrctr"
+"Compiling uartlite"
+"Compiling mbox"
+"Compiling mutex"
+"Compiling w3_userio_axi"
+"Compiling cpu"
+Running execs_generate.
+'Finished building libraries'

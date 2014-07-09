@@ -1,0 +1,3 @@
+PROCESSOR=mb_high
+REPOSITORIES=-lp C:/WARP_Repository/edk_user_repository
+HWSPEC=../wlan_xps_v35_hw_platform/system.xml
