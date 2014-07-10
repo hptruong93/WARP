@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<session version="1.0">
-<refactoring comment="Delete resource &apos;wlan_mac_high_ap/src/include/mac_address_control&apos;" deleteContents="false" description="Delete resource &apos;wlan_mac_high_ap/src/include/mac_address_control&apos;" element1="/wlan_mac_high_ap/src/include/mac_address_control" flags="7" id="org.eclipse.ltk.core.refactoring.delete.resources" resources="1" stamp="1405001608781"/>
-</session>
