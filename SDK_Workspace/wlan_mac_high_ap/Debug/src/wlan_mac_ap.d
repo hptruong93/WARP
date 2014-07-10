@@ -31,6 +31,7 @@ src/wlan_mac_ap.d: ../src/wlan_mac_ap.c \
  C:\Users\Ahmed.Youssef\Desktop\w3_802.11_EDK_v0.71_beta\SDK_Workspace\wlan_mac_shared\wlan_mac_high_framework\include/wlan_mac_dl_list.h \
  C:\Users\Ahmed.Youssef\Desktop\w3_802.11_EDK_v0.71_beta\SDK_Workspace\wlan_mac_shared\wlan_mac_high_framework\include/ascii_characters.h \
  C:\Users\Ahmed.Youssef\Desktop\w3_802.11_EDK_v0.71_beta\SDK_Workspace\wlan_mac_shared\wlan_mac_high_framework\include/wlan_mac_schedule.h \
+ C:\Users\Ahmed.Youssef\Desktop\w3_802.11_EDK_v0.71_beta\SDK_Workspace\wlan_mac_high_ap\src\include/warp_protocol.h \
  C:\Users\Ahmed.Youssef\Desktop\w3_802.11_EDK_v0.71_beta\SDK_Workspace\wlan_mac_shared\wlan_mac_high_framework\include/wlan_exp_common.h \
  ../../wlan_bsp_cpu_high/mb_high/include/warp_hw_ver.h \
  C:\Users\Ahmed.Youssef\Desktop\w3_802.11_EDK_v0.71_beta\SDK_Workspace\wlan_mac_shared\wlan_mac_high_framework\include/wlan_mac_high.h \
@@ -120,6 +121,8 @@ C:\Users\Ahmed.Youssef\Desktop\w3_802.11_EDK_v0.71_beta\SDK_Workspace\wlan_mac_s
 C:\Users\Ahmed.Youssef\Desktop\w3_802.11_EDK_v0.71_beta\SDK_Workspace\wlan_mac_shared\wlan_mac_high_framework\include/ascii_characters.h:
 
 C:\Users\Ahmed.Youssef\Desktop\w3_802.11_EDK_v0.71_beta\SDK_Workspace\wlan_mac_shared\wlan_mac_high_framework\include/wlan_mac_schedule.h:
+
+C:\Users\Ahmed.Youssef\Desktop\w3_802.11_EDK_v0.71_beta\SDK_Workspace\wlan_mac_high_ap\src\include/warp_protocol.h:
 
 C:\Users\Ahmed.Youssef\Desktop\w3_802.11_EDK_v0.71_beta\SDK_Workspace\wlan_mac_shared\wlan_mac_high_framework\include/wlan_exp_common.h:
 

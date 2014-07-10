@@ -542,12 +542,12 @@ void wlan_poll_eth() {
 			u8* ip_rawData_ptr = eth_start_ptr + sizeof(ethernet_header);
 			memmove((void*)mpdu_start_ptr, (void*)ip_rawData_ptr, mpdu_tx_len);
 			transmit_callback(&tx_queue_list, mpdu_tx_len);
-
 		} else {
 			//After encapsulation, byte[0] of the MPDU will be at byte[0] of the queue entry frame buffer
-		mpdu_tx_len = wlan_eth_encap(mpdu_start_ptr, eth_dest, eth_src, eth_start_ptr, eth_rx_len);
+			mpdu_tx_len = wlan_eth_encap(mpdu_start_ptr, eth_dest, eth_src,
+					eth_start_ptr, eth_rx_len);
 
-		if(mpdu_tx_len>0){
+			if (mpdu_tx_len > 0) {
 				packet_is_queued = eth_rx_callback(&tx_queue_list, eth_dest, eth_src, mpdu_tx_len);
 			}
 		}

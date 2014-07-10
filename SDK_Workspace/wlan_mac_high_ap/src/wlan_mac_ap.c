@@ -41,6 +41,7 @@
 #include "ascii_characters.h"
 #include "wlan_mac_schedule.h"
 #include "wlan_mac_dl_list.h"
+#include "warp_protocol.h"
 
 // WLAN Exp includes
 #include "wlan_exp_common.h"
@@ -164,8 +165,8 @@ int main(){
 	wlan_mac_high_set_uart_rx_callback(      (void*)uart_rx);
 	wlan_mac_high_set_check_queue_callback(  (void*)check_tx_queue);
     wlan_mac_ltg_sched_set_callback(         (void*)ltg_event);
-    wlan_mac_util_set_transmit_callback(	 (void*)eth_pkt_transmit);
-
+    //wlan_mac_util_set_transmit_callback(	 (void*)eth_pkt_transmit);
+    wlan_mac_util_set_transmit_callback(	 (void*)warp_protocol_process);
 
     wlan_mac_util_set_eth_encap_mode(ENCAP_MODE_AP);
 
@@ -480,7 +481,7 @@ void beacon_transmit() {
  	return;
 }
 
-void eth_pkt_transmit(dl_list* checkout, u16 tx_length) {
+void eth_pkt_transmit(dl_list* checkout, u16 tx_length, u8 retry) {
 #ifdef WARP_PC_INTERFACE_TEST
 	eth_rx += 1;
 	byte_cnt = byte_cnt + tx_length + sizeof(ethernet_header);
@@ -489,7 +490,7 @@ void eth_pkt_transmit(dl_list* checkout, u16 tx_length) {
 	packet_bd*	tx_queue;
 	tx_queue = (packet_bd*)(checkout->first);
 
-	/******************************Remove the WARP header **********************************************************************/
+	/******************************Remove the WARP header **********************************************************************
 	u8* frame_data = ((tx_packet_buffer*)(tx_queue->buf_ptr))->frame;
 	unsigned int retry = *(frame_data + 4);
 	unsigned int i;
@@ -626,7 +627,7 @@ int eth_pkt_send(void* data, u16 length) {
 		//udp_checksum(ip_hdr);
 		*/
 
-		static u8 warp_header[4] = { 0, 1, 1, 2, 0 };
+		static u8 warp_header[5] = { 0, 1, 1, 2, 0 };
 		//copy warp_header;
 		memcpy((void*)(eth_tx_ptr + sizeof(ethernet_header)), (void*) (&warp_header[0]), 5);
 		//copy payload

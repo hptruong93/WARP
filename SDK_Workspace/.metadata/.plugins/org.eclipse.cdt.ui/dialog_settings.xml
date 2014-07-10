@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <section name="Workbench">
+	<item value="Default C header template" key="LastUsedHeaderTemplate"/>
 	<section name="completion_proposal_size">
+	</section>
+	<section name="PDOMSearchPage">
+		<item value="227191" key="searchFlags"/>
+		<item value="false" key="caseSensitive"/>
+		<list key="previousPatterns">
+			<item value="40"/>
+			<item value="55*40"/>
+		</list>
 	</section>
 	<section name="org.eclipse.cdt.internal.ui.typehierarchy.OpenTypeInHierarchyActionSettings">
 		<item value="true" key="show_structs"/>
@@ -17,14 +26,6 @@
 		<item value="true" key="show_unions"/>
 		<item value="79" key="y"/>
 		<item value="744" key="x"/>
-	</section>
-	<section name="PDOMSearchPage">
-		<item value="227191" key="searchFlags"/>
-		<item value="false" key="caseSensitive"/>
-		<list key="previousPatterns">
-			<item value="40"/>
-			<item value="55*40"/>
-		</list>
 	</section>
 	<section name="org.eclipse.cdt.ui.text.hover.CMacroExpansionExploration.internal">
 		<item value="814" key="size.width"/>

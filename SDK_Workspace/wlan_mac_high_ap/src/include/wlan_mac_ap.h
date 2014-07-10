@@ -140,7 +140,8 @@ void mpdu_transmit_done(tx_frame_info* tx_mpdu);
 void check_tx_queue();
 
 void beacon_transmit();
-void eth_pkt_transmit(dl_list* checkout, u16 tx_length);
+void eth_pkt_transmit(dl_list* checkout, u16 tx_length, u8 retry);
+void send_test_packet();
 
 u32  get_associations_status();
 void enable_associations();

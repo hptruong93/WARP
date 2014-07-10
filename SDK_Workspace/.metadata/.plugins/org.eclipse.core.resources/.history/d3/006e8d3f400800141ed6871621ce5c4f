@@ -1,0 +1,15 @@
+/*
+ * warp_protocol.h
+ *
+ *  Created on: 2014-07-09
+ *      Author: Hoai Phuoc Truong
+ */
+
+#ifndef WARP_PROTOCOL_H_
+#define WARP_PROTOCOL_H_
+
+#include <xil_types.h>
+
+int warp_protocol_process(u8* packet);
+
+#endif /* WARP_PROTOCOL_H_ */

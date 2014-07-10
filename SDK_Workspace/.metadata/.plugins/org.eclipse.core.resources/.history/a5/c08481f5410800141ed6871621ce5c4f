@@ -1,0 +1,88 @@
+/*
+ * warp_protocol.c
+ *
+ *  Created on: 2014-07-10
+ *      Author: Hoai Phuoc Truong
+ */
+
+#include "xil_types.h"
+
+#include "warp_protocol.h"
+
+#include "wlan_mac_dl_list.h"
+#include "wlan_mac_queue.h"
+#include "wlan_mac_misc_util.h"
+
+#include "transmit_header.h"
+#include "mac_address_control.h"
+#include "transmission_control.h"
+
+
+#define TYPE_INDEX                        0
+#define SUBTYPE_INDEX                     1
+
+#define TYPE_TRANSMIT                     1
+#define TYPE_CONTROL                      2
+
+#define SUBTYPE_NO_ACK_TRANSMIT           0
+#define SUBTYPE_ACK_TRANSMIT              1
+
+#define SUBTYPE_TRANSMISSION_CONTROL      1
+#define SUBTYPE_MAC_ADDRESS_CONTROL       2
+
+u8 read_transmit_header(u8* packet, u8 ack) {
+	u8 retry = *(packet + 4);
+
+	return TRANSMIT_HEADER_LENGTH;
+}
+
+u8 read_transmission_control_header(u8* packet) {
+	return 0;
+}
+
+u8 read_mac_control_header(u8* packet) {
+	u8 operation_code = packet[OPERATION_CODE_INDEX];
+
+
+	return MAC_ADDRESS_CONTROL_LENGTH;
+}
+
+int warp_protocol_process(dl_list* checkout, u16 tx_length) {
+	packet_bd*	tx_queue;
+	tx_queue = (packet_bd*)(checkout->first);
+	u8* packet = ((tx_packet_buffer*)(tx_queue->buf_ptr))->frame;
+
+	u8 type = packet[TYPE_INDEX];
+	u8 subtype = packet[SUBTYPE_INDEX];
+
+	switch (type) {
+	case TYPE_TRANSMIT:
+		switch (subtype) {
+		case SUBTYPE_NO_ACK_TRANSMIT:
+			read_transmit_header(packet + 2, 0);
+			break;
+		case SUBTYPE_ACK_TRANSMIT:
+			read_transmit_header(packet + 2, 1);
+			break;
+		default:
+			break;
+		}
+		break;
+	case TYPE_CONTROL:
+		switch (subtype) {
+		case SUBTYPE_TRANSMISSION_CONTROL:
+			read_transmission_control_header(packet + 2);
+			break;
+		case SUBTYPE_MAC_ADDRESS_CONTROL:
+			read_mac_control_header(packet + 2);
+			break;
+		default:
+			break;
+		}
+		break;
+	default: //Do nothing
+		break;
+	}
+
+	return 0; //Success
+}

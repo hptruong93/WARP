@@ -2,14 +2,27 @@
 **** Build of configuration Debug for project wlan_mac_high_ap ****
 
 make -j8 all 
-Building file: C:/Users/Ahmed.Youssef/Desktop/w3_802.11_EDK_v0.71_beta/SDK_Workspace/wlan_mac_shared/wlan_mac_high_framework/wlan_mac_eth_util.c
+Building file: ../src/wlan_mac_ap.c
+Building file: ../src/wlan_mac_ap_uart_menu.c
 Invoking: MicroBlaze gcc compiler
-mb-gcc -Wall -O0 -g3 -I"C:\Users\Ahmed.Youssef\Desktop\w3_802.11_EDK_v0.71_beta\SDK_Workspace\wlan_mac_high_ap\src\include" -I"C:\Users\Ahmed.Youssef\Desktop\w3_802.11_EDK_v0.71_beta\SDK_Workspace\wlan_mac_shared\wlan_mac_common\include" -I"C:\Users\Ahmed.Youssef\Desktop\w3_802.11_EDK_v0.71_beta\SDK_Workspace\wlan_mac_shared\wlan_mac_high_framework\include" -c -fmessage-length=0 -Wl,--no-relax -I../../wlan_bsp_cpu_high/mb_high/include -mlittle-endian -mxl-barrel-shift -mxl-pattern-compare -mcpu=v8.40.b -mno-xl-soft-mul -MMD -MP -MF"wlan_mac_high_framework/wlan_mac_eth_util.d" -MT"wlan_mac_high_framework/wlan_mac_eth_util.d" -o"wlan_mac_high_framework/wlan_mac_eth_util.o" "C:/Users/Ahmed.Youssef/Desktop/w3_802.11_EDK_v0.71_beta/SDK_Workspace/wlan_mac_shared/wlan_mac_high_framework/wlan_mac_eth_util.c"
-Finished building: C:/Users/Ahmed.Youssef/Desktop/w3_802.11_EDK_v0.71_beta/SDK_Workspace/wlan_mac_shared/wlan_mac_high_framework/wlan_mac_eth_util.c
+mb-gcc -Wall -O0 -g3 -I"C:\Users\Ahmed.Youssef\Desktop\w3_802.11_EDK_v0.71_beta\SDK_Workspace\wlan_mac_high_ap\src\include" -I"C:\Users\Ahmed.Youssef\Desktop\w3_802.11_EDK_v0.71_beta\SDK_Workspace\wlan_mac_shared\wlan_mac_common\include" -I"C:\Users\Ahmed.Youssef\Desktop\w3_802.11_EDK_v0.71_beta\SDK_Workspace\wlan_mac_shared\wlan_mac_high_framework\include" -c -fmessage-length=0 -Wl,--no-relax -I../../wlan_bsp_cpu_high/mb_high/include -mlittle-endian -mxl-barrel-shift -mxl-pattern-compare -mcpu=v8.40.b -mno-xl-soft-mul -MMD -MP -MF"src/wlan_mac_ap.d" -MT"src/wlan_mac_ap.d" -o"src/wlan_mac_ap.o" "../src/wlan_mac_ap.c"
+Invoking: MicroBlaze gcc compiler
+mb-gcc -Wall -O0 -g3 -I"C:\Users\Ahmed.Youssef\Desktop\w3_802.11_EDK_v0.71_beta\SDK_Workspace\wlan_mac_high_ap\src\include" -I"C:\Users\Ahmed.Youssef\Desktop\w3_802.11_EDK_v0.71_beta\SDK_Workspace\wlan_mac_shared\wlan_mac_common\include" -I"C:\Users\Ahmed.Youssef\Desktop\w3_802.11_EDK_v0.71_beta\SDK_Workspace\wlan_mac_shared\wlan_mac_high_framework\include" -c -fmessage-length=0 -Wl,--no-relax -I../../wlan_bsp_cpu_high/mb_high/include -mlittle-endian -mxl-barrel-shift -mxl-pattern-compare -mcpu=v8.40.b -mno-xl-soft-mul -MMD -MP -MF"src/wlan_mac_ap_uart_menu.d" -MT"src/wlan_mac_ap_uart_menu.d" -o"src/wlan_mac_ap_uart_menu.o" "../src/wlan_mac_ap_uart_menu.c"
+../src/wlan_mac_ap.c: In function 'eth_pkt_transmit':
+../src/wlan_mac_ap.c:504:2: warning: "/*" within comment [-Wcomment]
+../src/wlan_mac_ap.c: In function 'mpdu_rx_process':
+../src/wlan_mac_ap.c:692:3: warning: "/*" within comment [-Wcomment]
+../src/wlan_mac_ap.c:694:3: warning: "/*" within comment [-Wcomment]
+../src/wlan_mac_ap.c: In function 'send_test_packet':
+../src/wlan_mac_ap.c:1439:2: warning: passing argument 4 of 'wlan_create_probe_req_frame' from incompatible pointer type [enabled by default]
+C:\Users\Ahmed.Youssef\Desktop\w3_802.11_EDK_v0.71_beta\SDK_Workspace\wlan_mac_shared\wlan_mac_high_framework\include/wlan_mac_packet_types.h:67:5: note: expected 'u8 *' but argument is of type 'u8 (*)[4]'
+Finished building: ../src/wlan_mac_ap_uart_menu.c
+' '
+Finished building: ../src/wlan_mac_ap.c
 ' '
 Building target: wlan_mac_high_ap.elf
 Invoking: MicroBlaze gcc linker
-mb-gcc -Wl,--no-relax -Wl,-Map=executable.map -Wl,-T -Wl,../src/lscript.ld -L../../wlan_bsp_cpu_high/mb_high/lib -mlittle-endian -mxl-barrel-shift -mxl-pattern-compare -mcpu=v8.40.b -mno-xl-soft-mul -o"wlan_mac_high_ap.elf"  ./wlan_mac_high_framework/wlan_exp_common.o ./wlan_mac_high_framework/wlan_exp_node.o ./wlan_mac_high_framework/wlan_exp_transport.o ./wlan_mac_high_framework/wlan_mac_dl_list.o ./wlan_mac_high_framework/wlan_mac_eth_util.o ./wlan_mac_high_framework/wlan_mac_event_log.o ./wlan_mac_high_framework/wlan_mac_events.o ./wlan_mac_high_framework/wlan_mac_fmc_pkt.o ./wlan_mac_high_framework/wlan_mac_high.o ./wlan_mac_high_framework/wlan_mac_ltg.o ./wlan_mac_high_framework/wlan_mac_packet_types.o ./wlan_mac_high_framework/wlan_mac_queue.o ./wlan_mac_high_framework/wlan_mac_schedule.o  ./wlan_mac_common/wlan_mac_ipc_util.o  ./src/wlan_exp_node_ap.o ./src/wlan_mac_ap.o ./src/wlan_mac_ap_uart_menu.o   -Wl,--start-group,-lxil,-lgcc,-lc,--end-group
+mb-gcc -Wl,--no-relax -Wl,-Map=executable.map -Wl,-T -Wl,../src/lscript.ld -L../../wlan_bsp_cpu_high/mb_high/lib -mlittle-endian -mxl-barrel-shift -mxl-pattern-compare -mcpu=v8.40.b -mno-xl-soft-mul -o"wlan_mac_high_ap.elf"  ./wlan_mac_high_framework/wlan_exp_common.o ./wlan_mac_high_framework/wlan_exp_node.o ./wlan_mac_high_framework/wlan_exp_transport.o ./wlan_mac_high_framework/wlan_mac_dl_list.o ./wlan_mac_high_framework/wlan_mac_eth_util.o ./wlan_mac_high_framework/wlan_mac_event_log.o ./wlan_mac_high_framework/wlan_mac_events.o ./wlan_mac_high_framework/wlan_mac_fmc_pkt.o ./wlan_mac_high_framework/wlan_mac_high.o ./wlan_mac_high_framework/wlan_mac_ltg.o ./wlan_mac_high_framework/wlan_mac_packet_types.o ./wlan_mac_high_framework/wlan_mac_queue.o ./wlan_mac_high_framework/wlan_mac_schedule.o  ./wlan_mac_common/wlan_mac_ipc_util.o  ./src/warp_protocol.o ./src/wlan_exp_node_ap.o ./src/wlan_mac_ap.o ./src/wlan_mac_ap_uart_menu.o   -Wl,--start-group,-lxil,-lgcc,-lc,--end-group
 Finished building target: wlan_mac_high_ap.elf
 ' '
 Invoking: MicroBlaze Print Size
@@ -17,7 +30,7 @@ mb-size wlan_mac_high_ap.elf  |tee "wlan_mac_high_ap.elf.size"
 Invoking: Xilinx ELF Check
 elfcheck wlan_mac_high_ap.elf -hw ../../wlan_xps_v35_hw_platform/system.xml -pe mb_high  |tee "wlan_mac_high_ap.elf.elfcheck"
    text	   data	    bss	    dec	    hex	filename
- 139340	   2040	  12084	 153464	  25778	wlan_mac_high_ap.elf
+ 140280	   2044	  12084	 154408	  25b28	wlan_mac_high_ap.elf
 Finished building: wlan_mac_high_ap.elf.size
 ' '
 elfcheck
