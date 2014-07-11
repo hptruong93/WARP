@@ -58,6 +58,7 @@
 #define IPC_MBOX_CONFIG_PHY_RX		8
 #define IPC_MBOX_CONFIG_PHY_TX		9
 #define IPC_MBOX_RX_BAD_FCS			10
+#define IPC_MBOX_MANAGE_MAC         11
 
 #define IPC_MBOX_MSG_ID(id) (IPC_MBOX_MSG_ID_DELIM | ((id) & 0xFFF))
 #define IPC_MBOX_MSG_ID_TO_MSG(id) (id) & 0xFFF
@@ -141,6 +142,8 @@ int ipc_mailbox_read_msg(wlan_ipc_msg* msg);
 int ipc_mailbox_write_msg(wlan_ipc_msg* msg);
 void nullCallback(void* param);
 
+void convert_u8_to_u32(u8* src, u32* dst, u8 length_src);
+void convert_u32_to_u8(u32* src, u8* dst, u8 length_src);
 
 #ifdef XPAR_INTC_0_DEVICE_ID
 int wlan_lib_mailbox_setup_interrupt(XIntc* intc);

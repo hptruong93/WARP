@@ -295,7 +295,7 @@ void wlan_mac_high_process_ipc_msg(wlan_ipc_msg* msg);
 void wlan_mac_high_set_channel( unsigned int mac_channel );
 void wlan_mac_high_set_dsss( unsigned int dsss_value );
 void wlan_mac_high_set_backoff_slot_value( u32 num_slots );
-
+void wlan_mac_high_mac_manage(u8* mac_control);
 
 int  wlan_mac_high_is_cpu_low_initialized();
 int  wlan_mac_high_is_cpu_low_ready();

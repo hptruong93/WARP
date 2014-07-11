@@ -12,4 +12,5 @@
 
 #define OPERATION_CODE_INDEX                  0
 
+
 #endif /* MAC_ADDRESS_CONTROL_H_ */

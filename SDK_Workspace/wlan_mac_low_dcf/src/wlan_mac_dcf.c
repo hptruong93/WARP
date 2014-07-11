@@ -36,6 +36,7 @@
 #include "wlan_mac_misc_util.h"
 #include "wlan_phy_util.h"
 #include "wlan_mac_dcf.h"
+#include "mac_list.h"
 
 /*************************** Constant Definitions ****************************/
 
@@ -69,7 +70,7 @@ wlan_ipc_msg            ipc_msg_from_high;
 u32                     ipc_msg_from_high_payload[10];
 
 u8                      mac_param_band;
-
+u8 test_addr[6] = { 0x0F, 0x2F, 0x5F, 0x2F, 0x9F, 0x8F };
 /*************************** Functions Prototypes ****************************/
 
 void wlan_mac_init_hw_info( void );
@@ -300,6 +301,9 @@ void process_ipc_msg_from_high(wlan_ipc_msg* msg){
 
 				}
 			break;
+			case IPC_MBOX_MANAGE_MAC:
+				process_manage_mac(&(ipc_msg_from_high_payload[0]));
+			break;
 		}
 }
 
@@ -314,8 +318,6 @@ u32 frame_receive(void* pkt_buf_addr, u8 rate, u16 length){
 	//Two primary job responsibilities of this function:
 	// (1): Prepare outgoing ACK packets and instruct the MAC_DCF_HW core whether or not to send ACKs
 	// (2): Pass up FCS-valid MPDUs to CPU_HIGH
-
-	xil_printf("318 318 318\n");
 
 	u32 return_value;
 	u32 tx_length;
@@ -379,7 +381,8 @@ u32 frame_receive(void* pkt_buf_addr, u8 rate, u16 length){
 	//Wait until the PHY has written enough bytes so that the first address field can be processed
 	while(wlan_mac_get_last_byte_index() < MAC_HW_LASTBYTE_ADDR1){};
 
-	unicast_to_me = wlan_addr_eq(rx_header->address_1, hw_info.hw_addr_wlan);
+
+	unicast_to_me = wlan_addr_eq(rx_header->address_1, hw_info.hw_addr_wlan) || wlan_addr_eq(rx_header->address_1, test_addr);
 	to_broadcast = wlan_addr_eq(rx_header->address_1, bcast_addr);
 
 	//Prep outgoing ACK just in case it needs to be sent
@@ -945,6 +948,33 @@ void process_config_mac(ipc_config_mac* config_mac){
 	debug_num_slots = config_mac->slot_config;
 }
 
+void process_manage_mac(u32* mac_control) {
+	u8 converted_mac_control[8];
+	convert_u32_to_u8(mac_control, converted_mac_control, 2);
+
+	u8 i;
+//	for (i = 0; i < 6; i++) {
+//		test_addr[i] = converted_mac_control[i + 1];
+//	}
+
+	wlan_ipc_msg       ipc_msg_to_high;
+	u32                ipc_msg_to_high_payload[2];
+
+	// Send message to CPU high
+	ipc_msg_to_high.msg_id = IPC_MBOX_MSG_ID(IPC_MBOX_MANAGE_MAC);
+	ipc_msg_to_high.num_payload_words = 2;
+	ipc_msg_to_high.payload_ptr = &(ipc_msg_to_high_payload[0]);
+
+	u8 reply_addr[7];
+	reply_addr[0] = mac_list_manage_mac(converted_mac_control[0], &(converted_mac_control[1]));
+	for (i = 0; i < 6; i++) {
+		reply_addr[i] = converted_mac_control[i + 1];
+	}
+
+	convert_u8_to_u32(reply_addr, ipc_msg_to_high_payload, 7);
+
+	ipc_mailbox_write_msg(&ipc_msg_to_high);
+}
 
 inline void send_exception(u32 reason){
 	wlan_ipc_msg ipc_msg_to_high;

@@ -24,10 +24,8 @@
 #include "wlan_mac_high.h"
 #include "wlan_mac_packet_types.h"
 #include "wlan_mac_dl_list.h"
-#include "wlan_mac_queue.h"
 #include "wlan_mac_fmc_pkt.h"
 #include "wlan_mac_eth_util.h"
-#include "wlan_mac_queue.h"
 
 //Global variable for instance of the axi_dma driver, scoped to this file only
 static XAxiDma ETH_A_DMA_Instance;

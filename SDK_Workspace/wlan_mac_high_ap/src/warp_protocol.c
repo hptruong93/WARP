@@ -5,9 +5,9 @@
  *      Author: Hoai Phuoc Truong
  */
 
+#include <string.h>
 #include "xil_types.h"
 #include "xintc.h"
-
 #include "warp_protocol.h"
 
 #include "wlan_mac_dl_list.h"
@@ -18,7 +18,7 @@
 #include "mac_address_control.h"
 #include "transmission_control.h"
 
-//#define WARP_PROTOCOL_DEBUG
+#define WARP_PROTOCOL_DEBUG
 
 #define TYPE_INDEX                        0
 #define SUBTYPE_INDEX                     1
@@ -43,7 +43,7 @@ void print_mac(u8* address) {
 	for (i = 0; i < 5; i++) {
 		xil_printf("%02x:", address[i]);
 	}
-	xil_printf("%02x", address[i]);
+	xil_printf("%02x\n", address[i]);
 }
 #endif
 
@@ -82,10 +82,7 @@ u8 read_mac_control_header(u8* packet, u16 length) {
 #endif
 
 	u8 mac_addr[6];
-	u8 i;
-	for (i = 0; i < 6; i++) {
-		mac_addr[i] = packet[HEADER_OFFSET + i + 1];
-	}
+	memcpy((void*) &(mac_addr[0]), packet + HEADER_OFFSET + 1, 6);
 
 #ifdef WARP_PROTOCOL_DEBUG
 	print_mac(&mac_addr[0]);
@@ -104,25 +101,24 @@ int warp_protocol_process(dl_list* checkout, u16 tx_length) {
 	u8 subtype = packet[SUBTYPE_INDEX];
 
 #ifdef WARP_PROTOCOL_DEBUG
-	xil_printf("Start reading warp protocol. Type is %d and subtype is %d \n", type, subtype);
+	//xil_printf("Start reading warp protocol. Type is %d and subtype is %d \n", type, subtype);
 #endif
 
-	u8 retry;
+	u8 retry = 0;
 
 	switch (type) {
 	case TYPE_TRANSMIT:
 #ifdef WARP_PROTOCOL_DEBUG
-		xil_printf("Transmit no ack\n");
+		//xil_printf("Transmit\n");
 #endif
-		;
 		retry = read_transmit_header(packet, tx_length);
-		warp_protocol_transmit_callback(checkout, tx_queue, tx_length, retry);
 		break;
 	case TYPE_CONTROL:
 		switch (subtype) {
 		case SUBTYPE_TRANSMISSION_CONTROL:
 #ifdef WARP_PROTOCOL_DEBUG
 			xil_printf("Transmission control\n");
+			xil_printf("Transmission subtype supported yet!\n");
 #endif
 			read_transmission_control_header(packet, tx_length);
 			break;
@@ -133,12 +129,19 @@ int warp_protocol_process(dl_list* checkout, u16 tx_length) {
 			read_mac_control_header(packet, tx_length);
 			break;
 		default:
+#ifdef WARP_PROTOCOL_DEBUG
+			xil_printf("Subtype not supported yet.\n");
+#endif
 			break;
 		}
 		break;
 	default: //Do nothing
+#ifdef WARP_PROTOCOL_DEBUG
+			xil_printf("Type not supported yet.\n");
+#endif
 		break;
 	}
 
+	warp_protocol_transmit_callback(checkout, tx_queue, tx_length, retry);
 	return 0; //Success
 }

@@ -321,3 +321,26 @@ int ipc_mailbox_read_msg(wlan_ipc_msg* msg) {
 
 	return IPC_MBOX_SUCCESS;
 }
+
+/*****************Helper to communicate u8 messages*************************/
+void convert_u8_to_u32(u8* src, u32* dst, u8 length_src) {
+	u8 i;
+	for (i = 0; i < length_src; i++) {
+		if (i % 4 == 0) {
+			dst[i / 4] = 0;
+		}
+		dst[i / 4] += (src[i] << (8 * (i % 4)));
+	}
+}
+
+void convert_u32_to_u8(u32* src, u8* dst, u8 length_src) {
+	u8 dst_index = 0;
+	u8 src_index;
+	for (src_index = 0; src_index < length_src; src_index++) {
+		u8 i;
+		for (i = 0; i < 4; i++) {
+			dst[dst_index] = (src[src_index] >> 8 * (dst_index % 4)) & 0xFF;
+			dst_index++;
+		}
+	}
+}

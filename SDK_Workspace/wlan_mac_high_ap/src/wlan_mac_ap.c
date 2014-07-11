@@ -415,7 +415,7 @@ void ltg_event(u32 id, void* callback_arg){
 }
 
 int ethernet_receive(dl_list* tx_queue_list, u8* eth_dest, u8* eth_src, u16 tx_length){
-	return 1;
+	//return 1;
 	//Receives the pre-encapsulated Ethernet frames
 	station_info* station;
 	//80211
@@ -671,7 +671,7 @@ void mpdu_rx_process(void* pkt_buf_addr, u8 rate, u16 length) {
 	static unsigned int count = 0;
 	count = (count + 1) % 10000;
 	xil_printf("Received from mac low %d\n", count);
-	//print_packet(pkt_buf_addr, length);
+	print_packet(pkt_buf_addr, length);
 
 	void * mpdu = pkt_buf_addr + PHY_RX_PKT_BUF_MPDU_OFFSET;
 	eth_pkt_send((void*) mpdu, length);
@@ -1426,27 +1426,8 @@ void reset_stats() {
 }
 
 void send_test_packet() {
-	mac_header_80211_common header;
-	header.seq_num = 123;
-	header.frag_num = 0;
-	header.address_1 = bcast_addr;
-	header.address_2 = eth_dst;
-	header.address_3 = bcast_addr;
-
-	u8 pkt[70];
-	u8 ssid_len = 4;
-	u8 ssid[4];
-	ssid[0] = 't';
-	ssid[1] = 'e';
-	ssid[2] = 's';
-	ssid[3] = 't';
-
-	int len = wlan_create_probe_req_frame(&pkt[0], &header, ssid_len, &ssid, 2);
-	int i;
-	for (i = 0; i < 1; i++) {
-		eth_pkt_send(&pkt, len);
-	}
-	wlan_mac_high_print_hw_info(wlan_mac_high_get_hw_info());
+	u8 test_message[7] = {0x01, 0x00, 0x21, 0x5d, 0x22, 0x97, 0x8c};
+	wlan_mac_high_mac_manage(test_message);
 }
 #endif
 

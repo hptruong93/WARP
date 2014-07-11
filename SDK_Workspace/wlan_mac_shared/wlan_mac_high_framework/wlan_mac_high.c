@@ -1169,6 +1169,19 @@ void wlan_mac_high_set_backoff_slot_value( u32 num_slots ) {
 	ipc_mailbox_write_msg(&ipc_msg_to_low);
 }
 
+void wlan_mac_high_mac_manage(u8* mac_control) {
+	wlan_ipc_msg ipc_msg_to_low;
+	u32                ipc_msg_to_low_payload[2];
+
+	// Send message to CPU Low
+	ipc_msg_to_low.msg_id = IPC_MBOX_MSG_ID(IPC_MBOX_MANAGE_MAC);
+	ipc_msg_to_low.num_payload_words = 2;
+	ipc_msg_to_low.payload_ptr = &(ipc_msg_to_low_payload[0]);
+
+	convert_u8_to_u32(mac_control, ipc_msg_to_low_payload, 7);
+
+	ipc_mailbox_write_msg(&ipc_msg_to_low);
+}
 
 
 
