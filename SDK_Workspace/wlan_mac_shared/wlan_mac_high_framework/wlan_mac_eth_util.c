@@ -515,28 +515,6 @@ void wlan_poll_eth() {
 		mpdu_start_ptr = (void*)((tx_packet_buffer*)(tx_queue->buf_ptr))->frame;
 
 		if (wlan_addr_eq(eth_start_ptr, warp_addr)) {
-			/*
-			dl_list checkout;
-			packet_bd*	tx_queue;
-			u8* tx_ptr;
-			queue_checkout(&checkout,1);
-			mpdu_tx_len = eth_rx_len - sizeof(ethernet_header);
-			// goto start of 802.11 header, received as payload
-			u8* ip_rawData_ptr = eth_start_ptr + sizeof(ethernet_header);
-			xil_printf("beacon_received\n");
-
-			if(checkout.length == 1){
-				tx_queue = (packet_bd*)(checkout.first);
-				tx_ptr = (u8*)((tx_packet_buffer*)(tx_queue->buf_ptr))->frame;
-				memcpy((void*)(tx_ptr) , ip_rawData_ptr, mpdu_tx_len);
-				packet_is_queued = transmit_callback(&checkout, mpdu_tx_len);
-				queue_checkin(&checkout);
-			} else {
-				xil_printf("transmit memory error.\n");
-			}
-			//packet_is_queued = transmit_callback(ip_rawData_ptr, mpdu_tx_len);
-			//return;
-			 * */
 			//xil_printf("pkt_received_on_ethernet");
 			mpdu_tx_len = eth_rx_len - sizeof(ethernet_header);
 			u8* ip_rawData_ptr = eth_start_ptr + sizeof(ethernet_header);

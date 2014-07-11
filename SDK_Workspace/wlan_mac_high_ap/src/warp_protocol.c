@@ -18,6 +18,7 @@
 #include "mac_address_control.h"
 #include "transmission_control.h"
 
+//#define WARP_PROTOCOL_DEBUG
 
 #define TYPE_INDEX                        0
 #define SUBTYPE_INDEX                     1
@@ -27,12 +28,16 @@
 #define TYPE_TRANSMIT                     1
 #define TYPE_CONTROL                      2
 
-#define SUBTYPE_NO_ACK_TRANSMIT           0
-#define SUBTYPE_ACK_TRANSMIT              1
-
 #define SUBTYPE_TRANSMISSION_CONTROL      1
 #define SUBTYPE_MAC_ADDRESS_CONTROL       2
 
+function_ptr_t warp_protocol_transmit_callback;
+
+void warp_protocol_set_transmit_callback(void(*callback)()) {
+	warp_protocol_transmit_callback = (function_ptr_t)callback;
+}
+
+#ifdef WARP_PROTOCOL_DEBUG
 void print_mac(u8* address) {
 	u8 i;
 	for (i = 0; i < 5; i++) {
@@ -40,6 +45,7 @@ void print_mac(u8* address) {
 	}
 	xil_printf("%02x", address[i]);
 }
+#endif
 
 void shift_back(u8* data, u16 length, signed char amount) {
 	if (amount != 0) {
@@ -58,10 +64,10 @@ void shift_back(u8* data, u16 length, signed char amount) {
 	}
 }
 
-u8 read_transmit_header(u8* packet, u16 length, u8 ack) {
+u8 read_transmit_header(u8* packet, u16 length) {
 	u8 retry = *(packet + HEADER_OFFSET + RETRY_INDEX);
 	shift_back(packet, length, HEADER_OFFSET + TRANSMIT_HEADER_LENGTH);
-	return TRANSMIT_HEADER_LENGTH;
+	return retry;
 }
 
 u8 read_transmission_control_header(u8* packet, u16 length) {
@@ -71,14 +77,20 @@ u8 read_transmission_control_header(u8* packet, u16 length) {
 
 u8 read_mac_control_header(u8* packet, u16 length) {
 	u8 operation_code = packet[HEADER_OFFSET + OPERATION_CODE_INDEX];
-	xil_printf("op code = %d", operation_code);
+#ifdef WARP_PROTOCOL_DEBUG
+	xil_printf("op code = %d\n", operation_code);
+#endif
 
 	u8 mac_addr[6];
 	u8 i;
 	for (i = 0; i < 6; i++) {
-		mac_addr[i] = packet[i + 1];
+		mac_addr[i] = packet[HEADER_OFFSET + i + 1];
 	}
+
+#ifdef WARP_PROTOCOL_DEBUG
 	print_mac(&mac_addr[0]);
+#endif
+
 	shift_back(packet, length, HEADER_OFFSET + MAC_ADDRESS_CONTROL_LENGTH);
 	return MAC_ADDRESS_CONTROL_LENGTH;
 }
@@ -91,26 +103,33 @@ int warp_protocol_process(dl_list* checkout, u16 tx_length) {
 	u8 type = packet[TYPE_INDEX];
 	u8 subtype = packet[SUBTYPE_INDEX];
 
+#ifdef WARP_PROTOCOL_DEBUG
+	xil_printf("Start reading warp protocol. Type is %d and subtype is %d \n", type, subtype);
+#endif
+
+	u8 retry;
+
 	switch (type) {
 	case TYPE_TRANSMIT:
-		switch (subtype) {
-		case SUBTYPE_NO_ACK_TRANSMIT:
-			read_transmit_header(packet, tx_length, 0);
-			eth_pkt_transmit(checkout, tx_length);
-			break;
-		case SUBTYPE_ACK_TRANSMIT:
-			read_transmit_header(packet, tx_length, 1);
-			break;
-		default:
-			break;
-		}
+#ifdef WARP_PROTOCOL_DEBUG
+		xil_printf("Transmit no ack\n");
+#endif
+		;
+		retry = read_transmit_header(packet, tx_length);
+		warp_protocol_transmit_callback(checkout, tx_queue, tx_length, retry);
 		break;
 	case TYPE_CONTROL:
 		switch (subtype) {
 		case SUBTYPE_TRANSMISSION_CONTROL:
+#ifdef WARP_PROTOCOL_DEBUG
+			xil_printf("Transmission control\n");
+#endif
 			read_transmission_control_header(packet, tx_length);
 			break;
 		case SUBTYPE_MAC_ADDRESS_CONTROL:
+#ifdef WARP_PROTOCOL_DEBUG
+			xil_printf("MAC address control\n");
+#endif
 			read_mac_control_header(packet, tx_length);
 			break;
 		default:

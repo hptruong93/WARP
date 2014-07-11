@@ -168,6 +168,8 @@ int main(){
     //wlan_mac_util_set_transmit_callback(	 (void*)eth_pkt_transmit);
     wlan_mac_util_set_transmit_callback(	 (void*)warp_protocol_process);
 
+    warp_protocol_set_transmit_callback(     (void*)send_to_wifi);
+
     wlan_mac_util_set_eth_encap_mode(ENCAP_MODE_AP);
 
     // Initialize interrupts
@@ -481,7 +483,24 @@ void beacon_transmit() {
  	return;
 }
 
-void eth_pkt_transmit(dl_list* checkout, u16 tx_length, u8 retry) {
+void send_to_wifi(dl_list* checkout, packet_bd*	tx_queue, u16 tx_length, u8 retry) {
+	if (queue_num_queued(0) < max_queue_size) {
+		wlan_mac_high_setup_tx_queue(tx_queue, NULL, tx_length, 0, default_tx_gain_target, 0);
+		enqueue_after_end(0, checkout);
+
+#ifdef WARP_PC_INTERFACE_TEST
+		wlan_tx += 1;
+#endif
+
+		check_tx_queue();
+		//xil_printf("pkt_transmitted\n");
+	} else {
+		queue_checkin(checkout);
+		memory_issue_cnt += 1;
+	}
+}
+
+void eth_pkt_transmit(dl_list* checkout, u16 tx_length) {
 #ifdef WARP_PC_INTERFACE_TEST
 	eth_rx += 1;
 	byte_cnt = byte_cnt + tx_length + sizeof(ethernet_header);
@@ -501,23 +520,9 @@ void eth_pkt_transmit(dl_list* checkout, u16 tx_length, u8 retry) {
 
 	xil_printf("Sent packet out to wifi, retry %d\n", retry);
 	//print_packet(((tx_packet_buffer*)(tx_queue->buf_ptr))->frame, (u16)tx_length);
-	/***************************************************************************************************************************/
+	***************************************************************************************************************************/
 
-	if(queue_num_queued(0) < max_queue_size){
-		wlan_mac_high_setup_tx_queue ( tx_queue, NULL, tx_length, retry, default_tx_gain_target, 0);
-		enqueue_after_end(0, checkout);
-
-#ifdef WARP_PC_INTERFACE_TEST
-	wlan_tx += 1;
-#endif
-
-		check_tx_queue();
-		//xil_printf("pkt_transmitted\n");
-	} else {
-		queue_checkin(checkout);
-		memory_issue_cnt += 1;
-	}
-	return;
+	send_to_wifi(checkout, tx_queue, tx_length, 0);
 }
 
 void print_packet(void* packet, u16 tx_length) {
@@ -627,14 +632,14 @@ int eth_pkt_send(void* data, u16 length) {
 		//udp_checksum(ip_hdr);
 		*/
 
-		static u8 warp_header[5] = { 0, 1, 1, 2, 0 };
+		static u8 warp_header[7] = { 1, 0, 0, 1, 1, 2, 0 };
 		//copy warp_header;
-		memcpy((void*)(eth_tx_ptr + sizeof(ethernet_header)), (void*) (&warp_header[0]), 5);
+		memcpy((void*)(eth_tx_ptr + sizeof(ethernet_header)), (void*) (&warp_header[0]), 7);
 		//copy payload
-		memcpy((void*)(eth_tx_ptr + sizeof(ethernet_header) + 5) , (void*) data, length);
+		memcpy((void*)(eth_tx_ptr + sizeof(ethernet_header) + 7) , (void*) data, length);
 
 		//send and then free memory
-		status = wlan_eth_dma_send(eth_tx_ptr, eth_tx_len + 5);
+		status = wlan_eth_dma_send(eth_tx_ptr, eth_tx_len + 7);
 		queue_checkin(&checkout);
 		if(status != 0) {xil_printf("Error in wlan_mac_send_eth! Err = %d\n", status); return -1;}
 	} else {
@@ -689,9 +694,9 @@ void mpdu_rx_process(void* pkt_buf_addr, u8 rate, u16 length) {
 
 	rx_frame_info* mpdu_info = (rx_frame_info*)pkt_buf_addr;
 
-	//*************
+	//-------------------
 	// Event logging
-	//*************
+	//-------------------
 
 	if(rate != WLAN_MAC_RATE_1M){
 		rx_event_log_entry = (void*)get_next_empty_rx_ofdm_event();
