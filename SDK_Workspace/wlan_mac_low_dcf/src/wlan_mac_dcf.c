@@ -382,7 +382,7 @@ u32 frame_receive(void* pkt_buf_addr, u8 rate, u16 length){
 	while(wlan_mac_get_last_byte_index() < MAC_HW_LASTBYTE_ADDR1){};
 
 
-	unicast_to_me = wlan_addr_eq(rx_header->address_1, hw_info.hw_addr_wlan) || wlan_addr_eq(rx_header->address_1, test_addr);
+	unicast_to_me = wlan_addr_eq(rx_header->address_1, hw_info.hw_addr_wlan) || (mac_list_check_mac(rx_header->address_1) == MAC_EXISTED);
 	to_broadcast = wlan_addr_eq(rx_header->address_1, bcast_addr);
 
 	//Prep outgoing ACK just in case it needs to be sent
@@ -952,11 +952,6 @@ void process_manage_mac(u32* mac_control) {
 	u8 converted_mac_control[8];
 	convert_u32_to_u8(mac_control, converted_mac_control, 2);
 
-	u8 i;
-//	for (i = 0; i < 6; i++) {
-//		test_addr[i] = converted_mac_control[i + 1];
-//	}
-
 	wlan_ipc_msg       ipc_msg_to_high;
 	u32                ipc_msg_to_high_payload[2];
 
@@ -967,8 +962,11 @@ void process_manage_mac(u32* mac_control) {
 
 	u8 reply_addr[7];
 	reply_addr[0] = mac_list_manage_mac(converted_mac_control[0], &(converted_mac_control[1]));
-	for (i = 0; i < 6; i++) {
-		reply_addr[i] = converted_mac_control[i + 1];
+
+
+	u8 i;
+	for (i = 1; i < 7; i++) {
+		reply_addr[i] = converted_mac_control[i];
 	}
 
 	convert_u8_to_u32(reply_addr, ipc_msg_to_high_payload, 7);

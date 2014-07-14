@@ -39,6 +39,7 @@ u8 mac_list_add_mac(u8* mac_addr) {
 		for (i = 0; i < LIST_SIZE; i++) {
 			if (!check_flag(i)) {
 				memcpy(mac_list[i], mac_addr, 6);
+				set_flag(i);
 				return MAC_ADDED;
 			}
 		}

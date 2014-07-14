@@ -117,8 +117,12 @@ void uart_rx(u8 rxByte){
 
 				case ASCII_6:
 					curr_char = 0;
-					xil_printf("Sending test packet.\n");
 					send_test_packet();
+				break;
+
+				case ASCII_7:
+					curr_char = 0;
+					send_test_packet_2();
 				break;
 
 				case ASCII_e:

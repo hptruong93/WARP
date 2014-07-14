@@ -952,6 +952,8 @@ void wlan_mac_high_process_ipc_msg( wlan_ipc_msg* msg ) {
 	u8  rx_pkt_buf;
     u32 temp_1, temp_2;
 
+    u8 mac_manage_reply[7];
+
 	switch(IPC_MBOX_MSG_ID_TO_MSG(msg->msg_id)) {
 
 		case IPC_MBOX_RX_MPDU_READY:
@@ -1072,6 +1074,11 @@ void wlan_mac_high_process_ipc_msg( wlan_ipc_msg* msg ) {
 			}
 		break;
 
+		case IPC_MBOX_MANAGE_MAC:
+			convert_u32_to_u8(ipc_msg_from_low_payload, mac_manage_reply, 2);
+			wlan_mac_high_mac_manage_reply(mac_manage_reply);
+		break;
+
 
 		default:
 			warp_printf(PL_ERROR, "Unknown IPC message type %d\n",IPC_MBOX_MSG_ID_TO_MSG(msg->msg_id));
@@ -1169,7 +1176,7 @@ void wlan_mac_high_set_backoff_slot_value( u32 num_slots ) {
 	ipc_mailbox_write_msg(&ipc_msg_to_low);
 }
 
-void wlan_mac_high_mac_manage(u8* mac_control) {
+void wlan_mac_high_mac_manage_control(u8* mac_control) {
 	wlan_ipc_msg ipc_msg_to_low;
 	u32                ipc_msg_to_low_payload[2];
 
@@ -1183,6 +1190,13 @@ void wlan_mac_high_mac_manage(u8* mac_control) {
 	ipc_mailbox_write_msg(&ipc_msg_to_low);
 }
 
+void wlan_mac_high_mac_manage_reply(u8* mac_control) {
+	xil_printf("Received\n");
+	u8 i;
+	for (i = 0; i < 7; i++) {
+		xil_printf("%02x-", mac_control[i]);
+	}
+}
 
 
 

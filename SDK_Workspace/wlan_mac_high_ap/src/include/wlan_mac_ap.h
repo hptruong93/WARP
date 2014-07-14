@@ -143,6 +143,7 @@ void beacon_transmit();
 //void eth_pkt_transmit(dl_list* checkout, u16 tx_length);
 void send_to_wifi(dl_list* checkout, packet_bd*	tx_queue, u16 tx_length, u8 retry);
 void send_test_packet();
+void send_test_packet_2();
 
 u32  get_associations_status();
 void enable_associations();

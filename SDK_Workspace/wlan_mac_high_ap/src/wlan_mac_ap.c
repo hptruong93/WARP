@@ -671,7 +671,7 @@ void mpdu_rx_process(void* pkt_buf_addr, u8 rate, u16 length) {
 	static unsigned int count = 0;
 	count = (count + 1) % 10000;
 	xil_printf("Received from mac low %d\n", count);
-	print_packet(pkt_buf_addr, length);
+	//print_packet(pkt_buf_addr, length);
 
 	void * mpdu = pkt_buf_addr + PHY_RX_PKT_BUF_MPDU_OFFSET;
 	eth_pkt_send((void*) mpdu, length);
@@ -1427,7 +1427,12 @@ void reset_stats() {
 
 void send_test_packet() {
 	u8 test_message[7] = {0x01, 0x00, 0x21, 0x5d, 0x22, 0x97, 0x8c};
-	wlan_mac_high_mac_manage(test_message);
+	wlan_mac_high_mac_manage_control(test_message);
+}
+
+void send_test_packet_2() {
+	u8 test_message[7] = {32, 0x00, 0x21, 0x5d, 0x22, 0x97, 0x8c};
+	wlan_mac_high_mac_manage_control(test_message);
 }
 #endif
 

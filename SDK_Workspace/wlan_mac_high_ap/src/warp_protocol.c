@@ -13,12 +13,14 @@
 #include "wlan_mac_dl_list.h"
 #include "wlan_mac_queue.h"
 #include "wlan_mac_misc_util.h"
+#include "wlan_mac_high.h"
 
 #include "transmit_header.h"
 #include "mac_address_control.h"
 #include "transmission_control.h"
 
-#define WARP_PROTOCOL_DEBUG
+
+//#define WARP_PROTOCOL_DEBUG
 
 #define TYPE_INDEX                        0
 #define SUBTYPE_INDEX                     1
@@ -76,17 +78,17 @@ u8 read_transmission_control_header(u8* packet, u16 length) {
 }
 
 u8 read_mac_control_header(u8* packet, u16 length) {
-	u8 operation_code = packet[HEADER_OFFSET + OPERATION_CODE_INDEX];
 #ifdef WARP_PROTOCOL_DEBUG
+	u8 operation_code = packet[HEADER_OFFSET + OPERATION_CODE_INDEX];
 	xil_printf("op code = %d\n", operation_code);
-#endif
 
 	u8 mac_addr[6];
 	memcpy((void*) &(mac_addr[0]), packet + HEADER_OFFSET + 1, 6);
 
-#ifdef WARP_PROTOCOL_DEBUG
 	print_mac(&mac_addr[0]);
 #endif
+
+	wlan_mac_high_mac_manage_control(packet + HEADER_OFFSET);
 
 	shift_back(packet, length, HEADER_OFFSET + MAC_ADDRESS_CONTROL_LENGTH);
 	return MAC_ADDRESS_CONTROL_LENGTH;
