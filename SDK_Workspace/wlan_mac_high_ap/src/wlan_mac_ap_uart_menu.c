@@ -498,8 +498,9 @@ void uart_rx(u8 rxByte){
 						xil_printf("\nIllegal Entry. Check your data again. Payload cannot be null.\n");
 					} else {
 						// Transmit.
-						eth_pkt_send(text_entry, strlen(text_entry));
-						xil_printf("\nPacket transmitted successfully \n");
+						//eth_pkt_send(text_entry, strlen(text_entry));
+						//xil_printf("\nPacket transmitted successfully \n");
+						xil_printf("\nThis feature is disabled because of compatibility issue \n");
 					}
 				break;
 				case ASCII_DEL:

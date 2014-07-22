@@ -39,6 +39,7 @@
 #include "wlan_mac_event_log.h"
 #include "wlan_mac_schedule.h"
 #include "malloc.h"
+#include "wlan_mac_ap.h"
 
 #include "wlan_exp_common.h"
 #include "wlan_exp_node.h"
@@ -264,7 +265,7 @@ void wlan_mac_high_init(){
 	wlan_fmc_pkt_init();
 	wlan_eth_init();
 	wlan_mac_schedule_init();
-	wlan_mac_ltg_sched_init();
+	//wlan_mac_ltg_sched_init();
 
 	//Create IPC message to receive into
 	ipc_msg_from_low.payload_ptr = &(ipc_msg_from_low_payload[0]);
@@ -1191,11 +1192,12 @@ void wlan_mac_high_mac_manage_control(u8* mac_control) {
 }
 
 void wlan_mac_high_mac_manage_reply(u8* mac_control) {
-	xil_printf("Received\n");
 	u8 i;
 	for (i = 0; i < 7; i++) {
 		xil_printf("%02x-", mac_control[i]);
 	}
+	static u8 warp_header[7] = { 2, 2 };
+	eth_pkt_send((void*) mac_control, 7, warp_header, 2);
 }
 
 

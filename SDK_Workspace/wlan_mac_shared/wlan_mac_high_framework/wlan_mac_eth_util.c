@@ -467,7 +467,7 @@ void wlan_poll_eth() {
 	u32 mpdu_tx_len;
 	dl_list tx_queue_list;
 	u32 i;
-	u8 warp_addr[] = {0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5};
+	u8 warp_addr[] = {0x40, 0xd8, 0x55, 0x04, 0x22, 0x85};
 
 	int bd_count;
 	int status;

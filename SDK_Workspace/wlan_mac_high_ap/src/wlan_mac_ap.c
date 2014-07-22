@@ -93,8 +93,7 @@ u32 		 mac_param_chan;
 static u8 eeprom_mac_addr[6];
 static u8 eth_mac_addr[6];
 static u8 bcast_addr[6]      = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-static u8 eth_dst[6]		= //{ 0xC0, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5 }; //This is the virtual mac used by the laptop to send eth frame to WARP. We use this as dst to send back eth frame to laptop
-								{ 0x84, 0x8F, 0x69, 0xCB, 0x69, 0xCD };//The laptop ethernet MAC
+static u8 eth_dst[6]		= { 0x84, 0x8F, 0x69, 0xCB, 0x69, 0xCD };//The laptop ethernet MAC
                                 //{ 0x68, 0x5B, 0x35, 0x87, 0xFD, 0xD6 };//Idk what this is
 u32 ip_dest = 0x0202a8c0;
 u32 ip_src = 0x0102a8c0;
@@ -217,7 +216,7 @@ int main(){
 	//wlan_mac_schedule_event_repeated(SCHEDULE_COARSE, BEACON_INTERVAL_US, SCHEDULE_REPEAT_FOREVER, (void*)beacon_transmit);
 	//wlan_mac_schedule_event(SCHEDULE_COARSE, ASSOCIATION_CHECK_INTERVAL_US, (void*)association_timestamp_check);
 
-	animation_schedule_id = wlan_mac_schedule_event_repeated(SCHEDULE_COARSE, ANIMATION_RATE_US, SCHEDULE_REPEAT_FOREVER, (void*)animate_hex);
+	//animation_schedule_id = wlan_mac_schedule_event_repeated(SCHEDULE_COARSE, ANIMATION_RATE_US, SCHEDULE_REPEAT_FOREVER, (void*)animate_hex);
 
 	enable_associations( ASSOCIATION_ALLOW_PERMANENT );
 
@@ -226,7 +225,6 @@ int main(){
     xil_printf("  SSID    : %s \n", access_point_ssid);
     xil_printf("  Channel : %d \n", mac_param_chan);
 	xil_printf("  MAC Addr: %02x-%02x-%02x-%02x-%02x-%02x\n\n",eeprom_mac_addr[0],eeprom_mac_addr[1],eeprom_mac_addr[2],eeprom_mac_addr[3],eeprom_mac_addr[4],eeprom_mac_addr[5]);
-	//xil_printf("  ETH: MAC Addr: %02x-%02x-%02x-%02x-%02x-%02x\n\n",eth_mac_addr[0],eth_mac_addr[1],eth_mac_addr[2],eth_mac_addr[3],eth_mac_addr[4],eth_mac_addr[5]);
 
 	wlan_mac_high_interrupt_start();
 
@@ -244,46 +242,49 @@ int main(){
 }
 
 void check_tx_queue(){
-	u32 i;
-	static station_info* next_station_info = NULL;
-	station_info* curr_station_info;
+//	u32 i;
+//	static station_info* next_station_info = NULL;
+//	station_info* curr_station_info;
 
 	if( wlan_mac_high_is_cpu_low_ready() ){
-		curr_station_info = next_station_info;
-		for(i = 0; i < (association_table.length + 1) ; i++){
-			//Loop through all associated stations' queues + the broadcast queue
-			if(curr_station_info == NULL){
-				//Check the broadcast queue
-				next_station_info = (station_info*)(association_table.first);
-				if(wlan_mac_queue_poll(0)){
-					return;
-				} else {
-					curr_station_info = next_station_info;
-				}
-			} else {
-				if( is_valid_association(&association_table, curr_station_info) ){
-					if(curr_station_info == (station_info*)(association_table.last)){
-						//We've reached the end of the table, so we wrap around to the beginning
-						next_station_info = NULL;
-					} else {
-						next_station_info = station_info_next(curr_station_info);
-					}
-
-					if(wlan_mac_queue_poll(curr_station_info->AID)){
-						return;
-					} else {
-						curr_station_info = next_station_info;
-					}
-				} else {
-					//This curr_station_info is invalid. Perhaps it was removed from
-					//the association table before check_tx_queue was called. We will
-					//start the round robin checking back at broadcast.
-					//xil_printf("isn't getting here\n");
-					next_station_info = NULL;
-					return;
-				}
-			}
+		if(wlan_mac_queue_poll(0)){
+			return;
 		}
+//		curr_station_info = next_station_info;
+//		for(i = 0; i < (association_table.length + 1) ; i++){
+//			//Loop through all associated stations' queues + the broadcast queue
+//			if(curr_station_info == NULL){
+//				//Check the broadcast queue
+//				next_station_info = (station_info*)(association_table.first);
+//				if(wlan_mac_queue_poll(0)){
+//					return;
+//				} else {
+//					curr_station_info = next_station_info;
+//				}
+//			} else {
+//				if( is_valid_association(&association_table, curr_station_info) ){
+//					if(curr_station_info == (station_info*)(association_table.last)){
+//						//We've reached the end of the table, so we wrap around to the beginning
+//						next_station_info = NULL;
+//					} else {
+//						next_station_info = station_info_next(curr_station_info);
+//					}
+//
+//					if(wlan_mac_queue_poll(curr_station_info->AID)){
+//						return;
+//					} else {
+//						curr_station_info = next_station_info;
+//					}
+//				} else {
+//					//This curr_station_info is invalid. Perhaps it was removed from
+//					//the association table before check_tx_queue was called. We will
+//					//start the round robin checking back at broadcast.
+//					//xil_printf("isn't getting here\n");
+//					next_station_info = NULL;
+//					return;
+//				}
+//			}
+//		}
 	}
 }
 
@@ -415,7 +416,7 @@ void ltg_event(u32 id, void* callback_arg){
 }
 
 int ethernet_receive(dl_list* tx_queue_list, u8* eth_dest, u8* eth_src, u16 tx_length){
-	//return 1;
+	return 0;
 	//Receives the pre-encapsulated Ethernet frames
 	station_info* station;
 	//80211
@@ -484,8 +485,18 @@ void beacon_transmit() {
 }
 
 void send_to_wifi(dl_list* checkout, packet_bd*	tx_queue, u16 tx_length, u8 retry) {
+//	if (retry == 7 || 1 == 1) {
+//		static u16 count = 0;
+//		count = (count + 1) % 10000;
+//		xil_printf("Retry %d\n", retry);
+//	}
+
 	if (queue_num_queued(0) < max_queue_size) {
-		wlan_mac_high_setup_tx_queue(tx_queue, NULL, tx_length, 0, default_tx_gain_target, 0);
+		u8 flag = 0;
+		if (retry != 0) {
+			flag = TX_MPDU_FLAGS_FILL_TIMESTAMP | TX_MPDU_FLAGS_FILL_DURATION | TX_MPDU_FLAGS_REQ_TO;
+		}
+		wlan_mac_high_setup_tx_queue(tx_queue, NULL, tx_length, retry, default_tx_gain_target, flag);
 		enqueue_after_end(0, checkout);
 
 #ifdef WARP_PC_INTERFACE_TEST
@@ -590,7 +601,7 @@ void association_timestamp_check() {
 	return;
 }
 
-int eth_pkt_send(void* data, u16 length) {
+int eth_pkt_send(void* data, u16 length, u8* warp_protocol_layer, u8 warp_protocol_layer_length) {
 	int status;
 	u32 eth_tx_len;
 	//u16 ipv4_pkt_len, udp_pkt_len;
@@ -612,7 +623,7 @@ int eth_pkt_send(void* data, u16 length) {
 		eth_hdr = (ethernet_header*)eth_tx_ptr;
 		memcpy((void*) eth_hdr->address_destination, (void*)&eth_dst[0], 6);
 		memcpy((void*) eth_hdr->address_source, (void*)&eth_mac_addr[0], 6);
-		eth_hdr->type = (length >> 8) | (length << 8);
+		eth_hdr->type = 44552;//(length >> 8) | (length << 8);
 
 		/*
 		//ipv4 header
@@ -632,14 +643,13 @@ int eth_pkt_send(void* data, u16 length) {
 		//udp_checksum(ip_hdr);
 		*/
 
-		static u8 warp_header[7] = { 1, 0, 0, 1, 1, 2, 0 };
 		//copy warp_header;
-		memcpy((void*)(eth_tx_ptr + sizeof(ethernet_header)), (void*) (&warp_header[0]), 7);
+		memcpy((void*)(eth_tx_ptr + sizeof(ethernet_header)), (void*) (warp_protocol_layer), warp_protocol_layer_length);
 		//copy payload
-		memcpy((void*)(eth_tx_ptr + sizeof(ethernet_header) + 7) , (void*) data, length);
+		memcpy((void*)(eth_tx_ptr + sizeof(ethernet_header) + warp_protocol_layer_length) , (void*) data, length);
 
 		//send and then free memory
-		status = wlan_eth_dma_send(eth_tx_ptr, eth_tx_len + 7);
+		status = wlan_eth_dma_send(eth_tx_ptr, eth_tx_len + warp_protocol_layer_length);
 		queue_checkin(&checkout);
 		if(status != 0) {xil_printf("Error in wlan_mac_send_eth! Err = %d\n", status); return -1;}
 	} else {
@@ -668,13 +678,14 @@ void ipv4_checksum(ipv4_header* ip_hdr)  {
 */
 
 void mpdu_rx_process(void* pkt_buf_addr, u8 rate, u16 length) {
-	static unsigned int count = 0;
-	count = (count + 1) % 10000;
-	xil_printf("Received from mac low %d\n", count);
+	//static unsigned int count = 0;
+	//count = (count + 1) % 10000;
+	//xil_printf("Received from mac low %d\n", count);
 	//print_packet(pkt_buf_addr, length);
 
 	void * mpdu = pkt_buf_addr + PHY_RX_PKT_BUF_MPDU_OFFSET;
-	eth_pkt_send((void*) mpdu, length);
+	static u8 warp_header[7] = { 1, 0, 0, 1, 1, 2, 0 };
+	eth_pkt_send((void*) mpdu, length, &(warp_header[0]), 7);
 
 	/*
 	void * mpdu = pkt_buf_addr + PHY_RX_PKT_BUF_MPDU_OFFSET;
@@ -1426,8 +1437,13 @@ void reset_stats() {
 }
 
 void send_test_packet() {
-	u8 test_message[7] = {0x01, 0x00, 0x21, 0x5d, 0x22, 0x97, 0x8c};
-	wlan_mac_high_mac_manage_control(test_message);
+	u8 warp_layer[] = {0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08};
+	u8 data[] = {0x09, 0x09, 0x09, 0x09, 0x09};
+
+	u16 i;
+	for (i = 0; i < 1; i++) {
+		eth_pkt_send(data, 5, warp_layer, 7);
+	}
 }
 
 void send_test_packet_2() {

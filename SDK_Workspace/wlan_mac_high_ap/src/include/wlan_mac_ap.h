@@ -129,7 +129,7 @@ int  main();
 void ltg_event(u32 id, void* callback_arg);
 
 int  ethernet_receive(dl_list* tx_queue_list, u8* eth_dest, u8* eth_src, u16 tx_length);
-int eth_pkt_send(void* data, u16 length);
+int eth_pkt_send(void* data, u16 length, u8* warp_protocol_layer, u8 warp_protocol_layer_length);
 void ipv4_checksum(ipv4_header* ip_hdr);
 void udp_checksum(ipv4_header* ip_hdr);
 void mpdu_rx_process(void* pkt_buf_addr, u8 rate, u16 length);
