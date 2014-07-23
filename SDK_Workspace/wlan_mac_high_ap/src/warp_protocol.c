@@ -19,7 +19,7 @@
 #include "mac_address_control.h"
 #include "transmission_control.h"
 
-
+#define WARP_PROTOCOL_ENABLED
 //#define WARP_PROTOCOL_DEBUG
 
 #define TYPE_INDEX                        0
@@ -34,6 +34,7 @@
 #define SUBTYPE_MAC_ADDRESS_CONTROL       2
 
 function_ptr_t warp_protocol_transmit_callback;
+u8 retry;
 
 void warp_protocol_set_transmit_callback(void(*callback)()) {
 	warp_protocol_transmit_callback = (function_ptr_t)callback;
@@ -49,36 +50,17 @@ void print_mac(u8* address) {
 }
 #endif
 
-void shift_back(u8* data, u16* length, signed char amount) {
-	if (amount != 0) {
-		if (amount > 0) {
-			if (*length - amount < 0) {
-				return;
-			}
-		} else if (*length + amount < 0) {
-			return;
-		}
-
-		unsigned int i;
-		for (i = 0; i < *length - amount; i++) {//Shift things by amount bytes
-			*(data + i) = *(data + i + amount);
-		}
-
-		*length = *length - amount;
-	}
-}
-
 u8 read_transmit_header(u8* packet, u16* length) {
-	u8 retry = *(packet + HEADER_OFFSET + RETRY_INDEX);
-	shift_back(packet, length, HEADER_OFFSET + TRANSMIT_HEADER_LENGTH);
+	retry = packet[HEADER_OFFSET + RETRY_INDEX];
+	*length = HEADER_OFFSET + TRANSMIT_HEADER_LENGTH + packet[HEADER_OFFSET + PAYLOAD_SIZE_INDEX];
 #ifdef WARP_PROTOCOL_DEBUG
 	xil_printf("Retry %d\n", retry);
 #endif
-	return retry;
+
+	return TRANSMIT_HEADER_LENGTH;
 }
 
 u8 read_transmission_control_header(u8* packet, u16* length) {
-	shift_back(packet, length, HEADER_OFFSET + TRANSMISSION_CONTROL_LENGTH);
 	return TRANSMISSION_CONTROL_LENGTH;
 }
 
@@ -94,63 +76,74 @@ u8 read_mac_control_header(u8* packet, u16* length) {
 #endif
 
 	wlan_mac_high_mac_manage_control(packet + HEADER_OFFSET);
-
-	shift_back(packet, length, HEADER_OFFSET + MAC_ADDRESS_CONTROL_LENGTH);
 	return MAC_ADDRESS_CONTROL_LENGTH;
 }
 
-int warp_protocol_process(dl_list* checkout, u16 tx_length) {
+void print_packett(void* packet, u16 tx_length) {
+	u16 i = 0;
+	u8* tx_pkt = packet;
+	xil_printf("packet length: %d\n", tx_length);
+	while (i < tx_length) {
+		xil_printf(" %02x ", (u8)tx_pkt[i]);
+		i++;
+	}
+	xil_printf("\n");
+}
+
+int warp_protocol_process(dl_list* checkout, u8* packet, u16 tx_length) {
 	packet_bd*	tx_queue;
 	tx_queue = (packet_bd*)(checkout->first);
-//	u8* packet = ((tx_packet_buffer*)(tx_queue->buf_ptr))->frame;
-//
-//	u8 type = packet[TYPE_INDEX];
-//	u8 subtype = packet[SUBTYPE_INDEX];
-//
-//	u16* packet_length = &tx_length;
-//
-//#ifdef WARP_PROTOCOL_DEBUG
-//	xil_printf("Start reading warp protocol. Type is %d and subtype is %d \n", type, subtype);
-//#endif
-//
-//	u8 retry = 0;
-//
-//	switch (type) {
-//	case TYPE_TRANSMIT:
-//#ifdef WARP_PROTOCOL_DEBUG
-//		xil_printf("Transmit\n");
-//#endif
-//		retry = read_transmit_header(packet, packet_length);
-//		break;
-//	case TYPE_CONTROL:
-//		switch (subtype) {
-//		case SUBTYPE_TRANSMISSION_CONTROL:
-//#ifdef WARP_PROTOCOL_DEBUG
-//			xil_printf("Transmission control\n");
-//			xil_printf("Transmission subtype supported yet!\n");
-//#endif
-//			read_transmission_control_header(packet, packet_length);
-//			break;
-//		case SUBTYPE_MAC_ADDRESS_CONTROL:
-//#ifdef WARP_PROTOCOL_DEBUG
-//			xil_printf("MAC address control\n");
-//#endif
-//			read_mac_control_header(packet, packet_length);
-//			break;
-//		default:
-//#ifdef WARP_PROTOCOL_DEBUG
-//			xil_printf("Subtype not supported yet.\n");
-//#endif
-//			break;
-//		}
-//		break;
-//	default: //Do nothing
-//#ifdef WARP_PROTOCOL_DEBUG
-//			xil_printf("Type not supported yet.\n");
-//#endif
-//		break;
-//	}
 
-	warp_protocol_transmit_callback(checkout, tx_queue, tx_length, 0);//retry);
+#ifdef WARP_PROTOCOL_ENABLED
+#ifdef WARP_PROTOCOL_DEBUG
+	xil_printf("Start reading warp protocol. Type is %d and subtype is %d \n", type, subtype);
+#endif
+
+	retry = 0;
+	u16 shift_amount = 0;
+
+	switch (packet[TYPE_INDEX]) {
+	case TYPE_TRANSMIT:
+#ifdef WARP_PROTOCOL_DEBUG
+		xil_printf("Transmit\n");
+#endif
+		shift_amount = read_transmit_header(packet, &tx_length);
+		break;
+	case TYPE_CONTROL:
+		switch (packet[SUBTYPE_INDEX]) {
+		case SUBTYPE_TRANSMISSION_CONTROL:
+#ifdef WARP_PROTOCOL_DEBUG
+			xil_printf("Transmission control\n");
+			xil_printf("Transmission subtype supported yet!\n");
+#endif
+			shift_amount = read_transmission_control_header(packet, &tx_length);
+			break;
+		case SUBTYPE_MAC_ADDRESS_CONTROL:
+#ifdef WARP_PROTOCOL_DEBUG
+			xil_printf("MAC address control\n");
+#endif
+			shift_amount = read_mac_control_header(packet, &tx_length);
+			break;
+		default:
+#ifdef WARP_PROTOCOL_DEBUG
+			xil_printf("Subtype not supported yet.\n");
+#endif
+			break;
+		}
+		break;
+	default: //Do nothing
+#ifdef WARP_PROTOCOL_DEBUG
+			xil_printf("Type not supported yet.\n");
+#endif
+		break;
+	}
+
+	tx_length = tx_length - (HEADER_OFFSET + shift_amount);
+	memmove((void*) ((tx_packet_buffer*)(tx_queue->buf_ptr))->frame, (void*) (packet + HEADER_OFFSET + shift_amount), tx_length);
+	warp_protocol_transmit_callback(checkout, tx_queue, tx_length, retry);
+#else
+	memmove((void*) ((tx_packet_buffer*)(tx_queue->buf_ptr))->frame, (void*) (packet), tx_length);
+	warp_protocol_transmit_callback(checkout, tx_queue, tx_length, 0);
+#endif
 	return 0; //Success
 }
