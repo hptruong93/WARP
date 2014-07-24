@@ -52,7 +52,9 @@ void print_mac(u8* address) {
 
 u8 read_transmit_header(u8* packet, u16* length) {
 	retry = packet[HEADER_OFFSET + RETRY_INDEX];
-	*length = HEADER_OFFSET + TRANSMIT_HEADER_LENGTH + packet[HEADER_OFFSET + PAYLOAD_SIZE_INDEX];
+	u16 new_length = (packet[HEADER_OFFSET + PAYLOAD_SIZE_MSB_INDEX] << 8) + packet[HEADER_OFFSET + PAYLOAD_SIZE_LSB_INDEX];
+
+	*length = HEADER_OFFSET + TRANSMIT_HEADER_LENGTH + new_length;
 #ifdef WARP_PROTOCOL_DEBUG
 	xil_printf("Retry %d\n", retry);
 #endif

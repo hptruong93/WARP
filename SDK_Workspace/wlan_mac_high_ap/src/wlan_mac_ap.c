@@ -493,9 +493,9 @@ void send_to_wifi(dl_list* checkout, packet_bd*	tx_queue, u16 tx_length, u8 retr
 
 	if (queue_num_queued(0) < max_queue_size) {
 		u8 flag = 0;
-		if (retry != 0) {
-			flag = TX_MPDU_FLAGS_FILL_TIMESTAMP | TX_MPDU_FLAGS_FILL_DURATION | TX_MPDU_FLAGS_REQ_TO;
-		}
+//		if (retry != 0) {
+//			flag = TX_MPDU_FLAGS_FILL_TIMESTAMP | TX_MPDU_FLAGS_FILL_DURATION | TX_MPDU_FLAGS_REQ_TO;
+//		}
 		wlan_mac_high_setup_tx_queue(tx_queue, NULL, tx_length, retry, default_tx_gain_target, flag);
 		enqueue_after_end(0, checkout);
 
