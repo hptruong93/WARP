@@ -484,19 +484,9 @@ void beacon_transmit() {
  	return;
 }
 
-void send_to_wifi(dl_list* checkout, packet_bd*	tx_queue, u16 tx_length, u8 retry) {
-//	if (retry == 7 || 1 == 1) {
-//		static u16 count = 0;
-//		count = (count + 1) % 10000;
-//		xil_printf("Retry %d\n", retry);
-//	}
-
+void send_to_wifi(dl_list* checkout, packet_bd*	tx_queue, u16 tx_length, transmit_element* transmit_info) {
 	if (queue_num_queued(0) < max_queue_size) {
-		u8 flag = 0;
-//		if (retry != 0) {
-//			flag = TX_MPDU_FLAGS_FILL_TIMESTAMP | TX_MPDU_FLAGS_FILL_DURATION | TX_MPDU_FLAGS_REQ_TO;
-//		}
-		wlan_mac_high_setup_tx_queue(tx_queue, NULL, tx_length, retry, default_tx_gain_target, flag);
+		wlan_mac_high_setup_tx_queue(tx_queue, NULL, tx_length, transmit_info->retry, default_tx_gain_target, transmit_info->flag);
 		enqueue_after_end(0, checkout);
 
 #ifdef WARP_PC_INTERFACE_TEST

@@ -15,26 +15,15 @@
 #include "wlan_mac_misc_util.h"
 #include "wlan_mac_high.h"
 
-#include "transmit_header.h"
+#include "transmit_element.h"
 #include "mac_address_control.h"
 #include "transmission_control.h"
 
 #define WARP_PROTOCOL_ENABLED
 //#define WARP_PROTOCOL_DEBUG
 
-#define TYPE_INDEX                        0
-#define SUBTYPE_INDEX                     1
-
-#define HEADER_OFFSET                     2
-
-#define TYPE_TRANSMIT                     1
-#define TYPE_CONTROL                      2
-
-#define SUBTYPE_TRANSMISSION_CONTROL      1
-#define SUBTYPE_MAC_ADDRESS_CONTROL       2
-
 function_ptr_t warp_protocol_transmit_callback;
-u8 retry;
+transmit_element transmit_info;
 
 void warp_protocol_set_transmit_callback(void(*callback)()) {
 	warp_protocol_transmit_callback = (function_ptr_t)callback;
@@ -51,10 +40,8 @@ void print_mac(u8* address) {
 #endif
 
 u8 read_transmit_header(u8* packet, u16* length) {
-	retry = packet[HEADER_OFFSET + RETRY_INDEX];
-	u16 new_length = (packet[HEADER_OFFSET + PAYLOAD_SIZE_MSB_INDEX] << 8) + packet[HEADER_OFFSET + PAYLOAD_SIZE_LSB_INDEX];
-
-	*length = HEADER_OFFSET + TRANSMIT_HEADER_LENGTH + new_length;
+	interpret_transmit_element(packet + HEADER_OFFSET, &transmit_info);
+	*length = HEADER_OFFSET + TRANSMIT_HEADER_LENGTH + transmit_info.length;
 #ifdef WARP_PROTOCOL_DEBUG
 	xil_printf("Retry %d\n", retry);
 #endif
@@ -81,17 +68,6 @@ u8 read_mac_control_header(u8* packet, u16* length) {
 	return MAC_ADDRESS_CONTROL_LENGTH;
 }
 
-void print_packett(void* packet, u16 tx_length) {
-	u16 i = 0;
-	u8* tx_pkt = packet;
-	xil_printf("packet length: %d\n", tx_length);
-	while (i < tx_length) {
-		xil_printf(" %02x ", (u8)tx_pkt[i]);
-		i++;
-	}
-	xil_printf("\n");
-}
-
 int warp_protocol_process(dl_list* checkout, u8* packet, u16 tx_length) {
 	packet_bd*	tx_queue;
 	tx_queue = (packet_bd*)(checkout->first);
@@ -101,7 +77,7 @@ int warp_protocol_process(dl_list* checkout, u8* packet, u16 tx_length) {
 	xil_printf("Start reading warp protocol. Type is %d and subtype is %d \n", type, subtype);
 #endif
 
-	retry = 0;
+	clear_transmit_element(&transmit_info);
 	u16 shift_amount = 0;
 
 	switch (packet[TYPE_INDEX]) {
@@ -142,10 +118,11 @@ int warp_protocol_process(dl_list* checkout, u8* packet, u16 tx_length) {
 
 	tx_length = tx_length - (HEADER_OFFSET + shift_amount);
 	memmove((void*) ((tx_packet_buffer*)(tx_queue->buf_ptr))->frame, (void*) (packet + HEADER_OFFSET + shift_amount), tx_length);
-	warp_protocol_transmit_callback(checkout, tx_queue, tx_length, retry);
+	warp_protocol_transmit_callback(checkout, tx_queue, tx_length, &transmit_info);
 #else
 	memmove((void*) ((tx_packet_buffer*)(tx_queue->buf_ptr))->frame, (void*) (packet), tx_length);
-	warp_protocol_transmit_callback(checkout, tx_queue, tx_length, 0);
+	clear_transmit_element(&transmit_info);
+	warp_protocol_transmit_callback(checkout, tx_queue, tx_length, &transmit_info);
 #endif
 	return 0; //Success
 }
