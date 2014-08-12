@@ -270,7 +270,7 @@ u8* wlan_mac_high_get_eth_mac_addr();
 u8* wlan_mac_high_get_eeprom_mac_addr();
 u8 wlan_mac_high_valid_tagged_rate(u8 rate);
 void wlan_mac_high_tagged_rate_to_readable_rate(u8 rate, char* str);
-void wlan_mac_high_setup_tx_header( mac_header_80211_common * header, u8 * addr_1, u8 * addr_3 );
+void wlan_mac_high_setup_tx_header( mac_header_80211_common * header, u8 * addr_1, u8 * addr_2, u8 * addr_3 );
 void wlan_mac_high_setup_tx_queue( packet_bd * tx_queue, void * metadata, u32 tx_length, u8 retry, u8 gain_target, u8 flags  );
 
 

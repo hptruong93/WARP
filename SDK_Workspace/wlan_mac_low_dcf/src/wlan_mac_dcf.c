@@ -381,7 +381,6 @@ u32 frame_receive(void* pkt_buf_addr, u8 rate, u16 length){
 	//Wait until the PHY has written enough bytes so that the first address field can be processed
 	while(wlan_mac_get_last_byte_index() < MAC_HW_LASTBYTE_ADDR1){};
 
-
 	unicast_to_me = wlan_addr_eq(rx_header->address_1, hw_info.hw_addr_wlan) || (mac_list_check_mac(rx_header->address_1) == MAC_EXISTED);
 	to_broadcast = wlan_addr_eq(rx_header->address_1, bcast_addr);
 

@@ -5,12 +5,13 @@
  *      Author: Hoai Phuoc Truong
  */
 
+#include <string.h>
 #include "xil_types.h"
 
 #include "warp_protocol.h"
 #include "transmit_element.h"
 
-void interpret_transmit_element(u8* packet, transmit_element* transmit_info) {
+void interpret_management_transmit_element(u8* packet, transmit_element* transmit_info) {
 	transmit_info->power = packet[POWER_INDEX];
 	transmit_info->rate = packet[RATE_INDEX];
 	transmit_info->channel = packet[CHANNEL_INDEX];
@@ -18,6 +19,18 @@ void interpret_transmit_element(u8* packet, transmit_element* transmit_info) {
 
 	transmit_info->retry = packet[RETRY_INDEX];
 	transmit_info->length = (packet[PAYLOAD_SIZE_MSB_INDEX] << 8) + packet[PAYLOAD_SIZE_LSB_INDEX];
+}
+
+void interpret_data_transmit_element(u8* packet, transmit_element* transmit_info) {
+	transmit_info->power = packet[POWER_INDEX];
+	transmit_info->rate = packet[RATE_INDEX];
+	transmit_info->channel = packet[CHANNEL_INDEX];
+	transmit_info->flag = packet[FLAG_INDEX];
+
+	transmit_info->retry = packet[RETRY_INDEX];
+	transmit_info->length = (packet[PAYLOAD_SIZE_MSB_INDEX] << 8) + packet[PAYLOAD_SIZE_LSB_INDEX];
+
+	memcpy(&(transmit_info->bssid[0]), &(packet[BSSID_INDEX]), 6);
 }
 
 void clear_transmit_element(transmit_element* element) {

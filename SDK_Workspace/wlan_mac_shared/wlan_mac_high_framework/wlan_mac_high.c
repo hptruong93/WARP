@@ -847,10 +847,11 @@ void wlan_mac_high_tagged_rate_to_readable_rate(u8 rate, char* str){
 * @note		None.
 *
 ******************************************************************************/
-void wlan_mac_high_setup_tx_header( mac_header_80211_common * header, u8 * addr_1, u8 * addr_3 ) {
+void wlan_mac_high_setup_tx_header( mac_header_80211_common * header, u8 * addr_1, u8 * addr_2, u8 * addr_3 ) {
 
 	// Set up Addresses in common header
 	header->address_1 = addr_1;
+	header->address_2 = addr_2;
     header->address_3 = addr_3;
 }
 
@@ -1193,6 +1194,7 @@ void wlan_mac_high_mac_manage_control(u8* mac_control) {
 
 void wlan_mac_high_mac_manage_reply(u8* mac_control) {
 	u8 i;
+	xil_printf("Receive mac management: ");
 	for (i = 0; i < 7; i++) {
 		xil_printf("%02x-", mac_control[i]);
 	}

@@ -24,7 +24,7 @@
 #define WLAN_MAC_AP_H_
 
 #include "wlan_mac_dl_list.h"
-#include "transmit_element.h"
+
 
 // **********************************************************************
 // Switches for various modes
@@ -141,8 +141,7 @@ void check_tx_queue();
 
 void beacon_transmit();
 //void eth_pkt_transmit(dl_list* checkout, u16 tx_length);
-void send_management_to_wifi(dl_list* checkout, packet_bd*	tx_queue, u16 tx_length, transmit_element* transmit_info);
-void send_data_to_wifi(dl_list* checkout, packet_bd*	tx_queue, u16 tx_length, transmit_element* transmit_info);
+void send_management_to_wifient_to_wifi(dl_list* checkout, packet_bd*	tx_queue, u16 tx_length, u8 retry);
 void send_test_packet();
 void send_test_packet_2();
 
