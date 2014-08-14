@@ -209,6 +209,7 @@ typedef struct{
 //ethernet packet types
 #define ETH_TYPE_ARP 	0x0608
 #define ETH_TYPE_IP 	0x0008
+#define ETH_TYPE_IPV6   0xdd86
 
 typedef struct{
 	u8 dsap;
@@ -222,6 +223,7 @@ typedef struct{
 #define LLC_CNTRL_UNNUMBERED			0x03
 #define LLC_TYPE_ARP					0x0608
 #define LLC_TYPE_IP						0x0008
+#define LLC_TYPE_IPV6					0xdd86
 #define LLC_TYPE_CUSTOM					0x9090
 
 

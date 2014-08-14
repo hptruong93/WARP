@@ -460,7 +460,7 @@ void wlan_poll_eth() {
 	XAxiDma_BdRing *rxRing_ptr;
 	XAxiDma_Bd *cur_bd_ptr;
 	XAxiDma_Bd *first_bd_ptr;
-	u8* mpdu_start_ptr;
+//	u8* mpdu_start_ptr;
 	u8* eth_start_ptr;
 	packet_bd* tx_queue;
 	u32 eth_rx_len, eth_rx_buf;
@@ -471,10 +471,6 @@ void wlan_poll_eth() {
 
 	int bd_count;
 	int status;
-	int packet_is_queued;
-
-	u8 eth_dest[6];
-	u8 eth_src[6];
 
 	static u32 max_bd_count = 0;
 
@@ -497,8 +493,6 @@ void wlan_poll_eth() {
 	}
 
 	for(i=0;i<bd_count;i++){
-		packet_is_queued = 1;
-
 		//A packet has been received and transferred by DMA
 		tx_queue = (packet_bd*)XAxiDma_BdGetId(cur_bd_ptr);
 
@@ -510,7 +504,7 @@ void wlan_poll_eth() {
 
 		dl_list_init(&tx_queue_list);
 		dl_node_insertEnd(&tx_queue_list, &(tx_queue->node));
-		mpdu_start_ptr = (void*)((tx_packet_buffer*)(tx_queue->buf_ptr))->frame;
+//		mpdu_start_ptr = (void*)((tx_packet_buffer*)(tx_queue->buf_ptr))->frame;
 
 		if (wlan_addr_eq(eth_start_ptr, warp_addr)) {
 			mpdu_tx_len = eth_rx_len - sizeof(ethernet_header);
@@ -518,16 +512,6 @@ void wlan_poll_eth() {
 
 			transmit_callback(&tx_queue_list, ip_rawData_ptr, mpdu_tx_len);
 		} else {//Drop
-			//After encapsulation, byte[0] of the MPDU will be at byte[0] of the queue entry frame buffer
-			mpdu_tx_len = wlan_eth_encap(mpdu_start_ptr, eth_dest, eth_src,
-					eth_start_ptr, eth_rx_len);
-
-			if (mpdu_tx_len > 0) {
-				packet_is_queued = eth_rx_callback(&tx_queue_list, eth_dest, eth_src, mpdu_tx_len);
-			}
-		}
-		if(packet_is_queued == 0){
-			//xil_printf("   ...checking in\n");
 			queue_checkin(&tx_queue_list);
 		}
 
@@ -540,7 +524,6 @@ void wlan_poll_eth() {
 
 		//Update cur_bd_ptr to the next BD in the chain for the next iteration
 		cur_bd_ptr = XAxiDma_BdRingNext(rxRing_ptr, cur_bd_ptr);
-
 	}
 	//TODO: Option B: We free all BDs at once and run the routine to checkout as many queues as we can and hook them up to BDs
 	//Results: pretty lackluster TCP performance. needs further investigation
@@ -632,8 +615,12 @@ int wlan_eth_encap(u8* mpdu_start_ptr, u8* eth_dest, u8* eth_src, u8* eth_start_
 				case ETH_TYPE_IP:
 					llc_hdr->type = LLC_TYPE_IP;
 				break;
+				case ETH_TYPE_IPV6:
+					llc_hdr->type = LLC_TYPE_IPV6;
+				break;
 				default:
 					//Unknown/unsupported EtherType; don't process the Eth frame
+					xil_printf("Unknown type: %d", eth_hdr->type);
 					return 0;
 				break;
 			}

@@ -415,7 +415,7 @@ void ltg_event(u32 id, void* callback_arg){
 }
 
 int ethernet_receive(dl_list* tx_queue_list, u8* eth_dest, u8* eth_src, u16 tx_length){
-	return 1;
+	return 0;
 	//Receives the pre-encapsulated Ethernet frames
 	station_info* station;
 	//80211
