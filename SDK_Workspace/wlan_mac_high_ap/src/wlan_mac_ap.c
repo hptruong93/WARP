@@ -457,32 +457,6 @@ int ethernet_receive(dl_list* tx_queue_list, u8* eth_dest, u8* eth_src, u16 tx_l
 
 }
 
-//void beacon_transmit() {
-// 	u16 tx_length;
-// 	dl_list checkout;
-// 	packet_bd*	tx_queue;
-//
-// 	//Checkout 1 element from the queue;
-// 	queue_checkout(&checkout,1);
-//
-// 	if(checkout.length == 1){ //There was at least 1 free queue element
-// 		tx_queue = (packet_bd*)(checkout.first);
-//
-// 		wlan_mac_high_setup_tx_header( &tx_header_common, bcast_addr, &(eeprom_mac_addr[0]), eeprom_mac_addr);
-//
-//        tx_length = wlan_create_beacon_frame((void*)((tx_packet_buffer*)(tx_queue->buf_ptr))->frame,&tx_header_common, BEACON_INTERVAL_MS, strlen(access_point_ssid), (u8*)access_point_ssid, mac_param_chan);
-//
-// 		wlan_mac_high_setup_tx_queue ( tx_queue, NULL, tx_length, 0, default_tx_gain_target, TX_MPDU_FLAGS_FILL_TIMESTAMP );
-//
-// 		enqueue_after_end(0, &checkout);
-//
-// 		check_tx_queue();
-//
-// 	}
-//
-// 	return;
-//}
-
 void send_management_to_wifi(dl_list* checkout, packet_bd*	tx_queue, u16 tx_length, transmit_element* transmit_info) {
 	if (queue_num_queued(0) < max_queue_size) {
 		wlan_mac_high_setup_tx_queue(tx_queue, NULL, tx_length, transmit_info->retry, default_tx_gain_target, transmit_info->flag);
