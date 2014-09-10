@@ -9,6 +9,7 @@
 #include "xil_types.h"
 #include "xintc.h"
 #include "warp_protocol.h"
+#include "fragment_receiver.h"
 
 #include "wlan_mac_dl_list.h"
 #include "wlan_mac_queue.h"
@@ -20,13 +21,17 @@
 #include "mac_address_control.h"
 #include "transmission_control.h"
 
-#define WARP_PROTOCOL_ENABLED
 //#define WARP_PROTOCOL_DEBUG
 
 function_ptr_t warp_protocol_management_transmit_callback;
 function_ptr_t warp_protocol_data_transmit_callback;
-function_ptr_t warp_protocol_transmit_callback;
 transmit_element transmit_info;
+
+void warp_protocol_initialize(void* management_transmit_callback, void* data_transmit_callback) {
+	warp_protocol_set_management_transmit_callback(management_transmit_callback);
+	warp_protocol_set_data_transmit_callback(data_transmit_callback);
+	fragment_receiver_initialize();
+}
 
 void warp_protocol_set_management_transmit_callback(void(*callback)()) {
 	warp_protocol_management_transmit_callback = (function_ptr_t)callback;
@@ -46,18 +51,10 @@ void print_mac(u8* address) {
 }
 #endif
 
-u8 read_management_transmit_header(u8* packet, u16* length) {
-	interpret_management_transmit_element(packet + HEADER_OFFSET, &transmit_info);
-	*length = HEADER_OFFSET + TRANSMIT_MANAGEMENT_HEADER_LENGTH + transmit_info.length;
-
-	return TRANSMIT_MANAGEMENT_HEADER_LENGTH;
-}
-
-u8 read_data_transmit_header(u8* packet, u16* length) {
-	interpret_data_transmit_element(packet + HEADER_OFFSET, &transmit_info);
-	*length = HEADER_OFFSET + TRANSMIT_DATA_HEADER_LENGTH + transmit_info.length;
-
-	return TRANSMIT_DATA_HEADER_LENGTH;
+u8 read_transmit_header(u8* packet, u16* length) {
+	interpret_transmit_element(packet + HEADER_OFFSET, &transmit_info);
+	*length = HEADER_OFFSET + TRANSMIT_HEADER_LENGTH + transmit_info.length;
+	return TRANSMIT_HEADER_LENGTH;
 }
 
 u8 read_transmission_control_header(u8* packet, u16* length) {
@@ -90,19 +87,9 @@ void print_packett(void* packet, u16 tx_length) {
 	xil_printf("\n");
 }
 
-void print_mac(u8* mac) {
-	u8 i = 0;
-	for (i = 0; i < 6; i++) {
-		xil_printf("%02x-", mac[i]);
-	}
-	xil_printf("\n");
-}
-
 int warp_protocol_process(dl_list* checkout, u8* packet, u16 tx_length) {
-	packet_bd*	tx_queue;
-	tx_queue = (packet_bd*)(checkout->first);
+	packet_bd*	tx_queue = (packet_bd*)(checkout->first);
 
-#ifdef WARP_PROTOCOL_ENABLED
 #ifdef WARP_PROTOCOL_DEBUG
 	xil_printf("Start reading warp protocol. Type is %d and subtype is %d \n", type, subtype);
 #endif
@@ -110,41 +97,63 @@ int warp_protocol_process(dl_list* checkout, u8* packet, u16 tx_length) {
 	clear_transmit_element(&transmit_info);
 	u16 shift_amount = 0;
 
-	warp_protocol_transmit_callback = warp_protocol_management_transmit_callback;
-
 	switch (packet[TYPE_INDEX]) {
 	case TYPE_TRANSMIT:
 #ifdef WARP_PROTOCOL_DEBUG
 		xil_printf("Transmit\n");
 #endif
-		if (packet[SUBTYPE_INDEX] == SUBTYPE_MANAGEMENT_TRANSMIT) {
-			shift_amount = read_management_transmit_header(packet, &tx_length);
-			warp_protocol_transmit_callback = warp_protocol_management_transmit_callback;
 
-			tx_length = tx_length - (HEADER_OFFSET + shift_amount);
-			memmove((void*) ((tx_packet_buffer*)(tx_queue->buf_ptr))->frame, (void*) (packet + HEADER_OFFSET + shift_amount), tx_length);
-			warp_protocol_management_transmit_callback(checkout, tx_queue, tx_length, &transmit_info);
+		;
 
-			return 0;
-		} else if (packet[SUBTYPE_INDEX] == SUBTYPE_DATA_TRANSMIT) {
-			shift_amount = read_data_transmit_header(packet, &tx_length);
-			warp_protocol_transmit_callback = warp_protocol_data_transmit_callback;
+		u32 ethernet_discrepancy = packet - ((tx_packet_buffer*)(tx_queue->buf_ptr))->frame;
+		shift_amount = HEADER_OFFSET + read_transmit_header(packet, &tx_length);
 
-			tx_length = tx_length - (HEADER_OFFSET + shift_amount);
+		fragment_receive_result* receive_result = fragment_receive(checkout, tx_length - shift_amount, ethernet_discrepancy + shift_amount);
+		shift_amount += FRAGMENT_INFO_LENGTH;
+		if (receive_result->status == RECEIVER_READY_TO_SEND) {
+			dl_list* current = receive_result->packet_address;
 
-			u32 new_tx_length = wlan_eth_encap(((tx_packet_buffer*)(tx_queue->buf_ptr))->frame, transmit_info.dst_mac, transmit_info.src_mac, packet + HEADER_OFFSET + shift_amount, tx_length);
 
-			if (new_tx_length > 0) {
-				memmove((void*) (packet), (void*) (packet + HEADER_OFFSET + shift_amount + 14), tx_length - 14);
+			if (current != checkout) {
+				//Check in the dl_list* checkout now since the packet has been assembled in dl_list* current.
+				//Otherwise, packet is assembled into the current dl_list* checkout and will be checked in of once the packet is sent.
+				queue_checkin(checkout);
+			}
+			tx_queue = (packet_bd*)(current->first);
 
-				//print_packett(packet, tx_length - 14);
+			tx_length = receive_result->info_address->length;
+			free_fragment_receive_result(receive_result);
+			if (packet[SUBTYPE_INDEX] == SUBTYPE_MANAGEMENT_TRANSMIT) {
+				memmove((void*) ((tx_packet_buffer*)(tx_queue->buf_ptr))->frame, (void*) (packet + shift_amount), tx_length);
+				warp_protocol_management_transmit_callback(current, tx_queue, tx_length, &transmit_info);
 
-				warp_protocol_data_transmit_callback(checkout, tx_queue, new_tx_length, &transmit_info);
 				return 0;
-			} else {
-				xil_printf("Cannot insert data header...\n");
+			}
+//			else if (packet[SUBTYPE_INDEX] == SUBTYPE_DATA_TRANSMIT) {
+//				u32 new_tx_length = wlan_eth_encap(((tx_packet_buffer*)(tx_queue->buf_ptr))->frame, transmit_info.dst_mac, transmit_info.src_mac, packet + shift_amount , tx_length);
+//
+//				if (new_tx_length > 0) {
+//					memmove((void*) (packet), (void*) (packet + HEADER_OFFSET + shift_amount + 14), tx_length - 14);
+//
+//					//print_packett(packet, tx_length - 14);
+//
+//					warp_protocol_data_transmit_callback(checkout, tx_queue, new_tx_length, &transmit_info);
+//					return 0;
+//				} else {
+//					xil_printf("Cannot insert data header...\n");
+//				}
+//			}
+
+			//print_packett(((tx_packet_buffer*)(tx_queue->buf_ptr))->frame + ethernet_discrepancy + shift_amount, tx_length);
+		} else {
+			if (receive_result->packet_address != NULL) {
+				queue_checkin(receive_result->packet_address);
 			}
 		}
+
+
+
+
 		break;
 	case TYPE_CONTROL:
 		switch (packet[SUBTYPE_INDEX]) {
@@ -175,11 +184,6 @@ int warp_protocol_process(dl_list* checkout, u8* packet, u16 tx_length) {
 		break;
 	}
 
-	queue_checkin(checkout);
-#else
-	memmove((void*) ((tx_packet_buffer*)(tx_queue->buf_ptr))->frame, (void*) (packet), tx_length);
-	clear_transmit_element(&transmit_info);
-	warp_protocol_management_transmit_callback(checkout, tx_queue, tx_length, &transmit_info);
-#endif
+	//queue_checkin(checkout);
 	return 0; //Success
 }

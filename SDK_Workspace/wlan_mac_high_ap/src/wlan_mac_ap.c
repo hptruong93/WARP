@@ -162,11 +162,10 @@ int main(){
 	wlan_mac_high_set_pb_u_callback(         (void*)up_button);
 	wlan_mac_high_set_uart_rx_callback(      (void*)uart_rx);
 	wlan_mac_high_set_check_queue_callback(  (void*)check_tx_queue);
-    wlan_mac_ltg_sched_set_callback(         (void*)ltg_event);
+    //wlan_mac_ltg_sched_set_callback(         (void*)ltg_event);
     wlan_mac_util_set_transmit_callback(	 (void*)warp_protocol_process);
 
-    warp_protocol_set_management_transmit_callback(     (void*)send_management_to_wifi);
-    warp_protocol_set_data_transmit_callback(           (void*)send_data_to_wifi);
+    warp_protocol_initialize((void*)send_management_to_wifi, (void*)send_data_to_wifi);
 
     wlan_mac_util_set_eth_encap_mode(ENCAP_MODE_AP);
 
@@ -201,7 +200,7 @@ int main(){
 	memcpy((void*) &ipv4_common.ip_src, (void*) &ip_src, 4);
 
     // Initialize hex display
-	wlan_mac_high_write_hex_display(0);
+//	wlan_mac_high_write_hex_display(0);
 
 	// Set up channel
 	mac_param_chan = WLAN_CHANNEL;
@@ -327,7 +326,7 @@ void up_button(){
 
         case ASSOCIATION_ALLOW_NONE:
     		// AP is currently not allowing any associations to take place
-        	animation_schedule_id = wlan_mac_schedule_event_repeated(SCHEDULE_COARSE, ANIMATION_RATE_US, SCHEDULE_REPEAT_FOREVER, (void*)animate_hex);
+//        	animation_schedule_id = wlan_mac_schedule_event_repeated(SCHEDULE_COARSE, ANIMATION_RATE_US, SCHEDULE_REPEAT_FOREVER, (void*)animate_hex);
     		enable_associations( ASSOCIATION_ALLOW_TEMPORARY );
     		wlan_mac_schedule_event(SCHEDULE_COARSE,ASSOCIATION_ALLOW_INTERVAL_US, (void*)disable_associations);
         break;
@@ -539,12 +538,22 @@ int eth_pkt_send(void* data, u16 length, u8* warp_protocol_layer, u8 warp_protoc
 void mpdu_rx_process(void* pkt_buf_addr, u8 rate, u16 length) {
 	static unsigned int count = 0;
 	count = (count + 1) % 10000;
-	//xil_printf("Received from mac low %d\n", count);
+	xil_printf("Received from mac low %d\n", count);
 	//print_packet(pkt_buf_addr, length);
 
+	static unsigned int fragment_id_count = 0;
+	fragment_id_count = (fragment_id_count + 1) % 255;
+	if (fragment_id_count == 255) {
+		fragment_id_count = 0;
+	}
+
 	void * mpdu = pkt_buf_addr + PHY_RX_PKT_BUF_MPDU_OFFSET;
-	static u8 warp_header[] = { 1, 0, 0, 1, 1, 2, 0, 0, 0 };
-	eth_pkt_send((void*) mpdu, length, &(warp_header[0]), 9);
+	static u8 warp_header[] = { 1, 0, 0x40, 0xD8, 0x55, 0x04, 0x22, 0x84, 0, 0, 0, 0, 99, 1, 1, 0, 0};
+	warp_header[12] = fragment_id_count;
+	warp_header[10] = (length >> 8) & 0xff;
+	warp_header[11] = (length) & 0xff;
+
+	eth_pkt_send((void*) mpdu, length, &(warp_header[0]), sizeof(warp_header));
 	return;
 }
 
@@ -624,17 +633,17 @@ void disable_associations(){
 		wlan_mac_remove_schedule(SCHEDULE_COARSE, animation_schedule_id);
 
 		// Set the hex display
-		wlan_mac_high_write_hex_display(association_table.length);
-		wlan_mac_high_write_hex_display_dots(0);
+//		wlan_mac_high_write_hex_display(association_table.length);
+//		wlan_mac_high_write_hex_display_dots(0);
 	}
 }
 
-void animate_hex(){
-	static u8 i = 0;
-	//wlan_mac_high_write_hex_display(next_free_assoc_index,i%2);
-	wlan_mac_high_write_hex_display_dots(i%2);
-	i++;
-}
+//void animate_hex(){
+//	static u8 i = 0;
+//	//wlan_mac_high_write_hex_display(next_free_assoc_index,i%2);
+//	wlan_mac_high_write_hex_display_dots(i%2);
+//	i++;
+//}
 
 
 /*****************************************************************************/
@@ -666,7 +675,6 @@ void reset_station_statistics(){
 
 
 u32  deauthenticate_station( station_info* station ) {
-
 	dl_list checkout;
 	packet_bd*     tx_queue;
 	u32            tx_length;
@@ -703,7 +711,7 @@ u32  deauthenticate_station( station_info* station ) {
 		remove_association( &association_table, &statistics_table, station->addr );
 	}
 
-	wlan_mac_high_write_hex_display(association_table.length);
+//	wlan_mac_high_write_hex_display(association_table.length);
 
 	return aid;
 }
@@ -724,16 +732,16 @@ u32  deauthenticate_station( station_info* station ) {
 *
 ******************************************************************************/
 void deauthenticate_stations(){
-	u32 i;
-	station_info* curr_station_info;
-	station_info* next_station_info;
-
-	next_station_info = (station_info*)(association_table.first);
-	for (i = 0; i < association_table.length ; i++){
-		curr_station_info = next_station_info;
-		next_station_info = station_info_next(curr_station_info);
-		deauthenticate_station(curr_station_info);
-	}
+//	u32 i;
+//	station_info* curr_station_info;
+//	station_info* next_station_info;
+//
+//	next_station_info = (station_info*)(association_table.first);
+//	for (i = 0; i < association_table.length ; i++){
+//		curr_station_info = next_station_info;
+//		next_station_info = station_info_next(curr_station_info);
+//		deauthenticate_station(curr_station_info);
+//	}
 }
 
 station_info* add_association(dl_list* assoc_tbl, dl_list* stat_tbl, u8* addr){
@@ -814,7 +822,7 @@ station_info* add_association(dl_list* assoc_tbl, dl_list* stat_tbl, u8* addr){
 			}
 
 			print_associations(assoc_tbl);
-			wlan_mac_high_write_hex_display(assoc_tbl->length);
+//			wlan_mac_high_write_hex_display(assoc_tbl->length);
 
 			return station;
 		} else {
@@ -908,7 +916,7 @@ int remove_association(dl_list* assoc_tbl, dl_list* stat_tbl, u8* addr){
 #endif
 		wlan_mac_high_free(station);
 		print_associations(assoc_tbl);
-		wlan_mac_high_write_hex_display(assoc_tbl->length);
+//		wlan_mac_high_write_hex_display(assoc_tbl->length);
 		return 0;
 	}
 }
@@ -955,5 +963,3 @@ void send_test_packet_2() {
 	wlan_mac_high_mac_manage_control(test_message);
 }
 #endif
-
-

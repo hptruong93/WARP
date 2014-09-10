@@ -610,28 +610,28 @@ u8 wlan_mac_high_get_tx_rate(station_info* station){
 	return return_value;
 }
 
-void wlan_mac_high_write_hex_display(u8 val){
-	//u8 val: 2 digit decimal value to be printed to hex displays
-   userio_write_control(USERIO_BASEADDR, userio_read_control(USERIO_BASEADDR) | (W3_USERIO_HEXDISP_L_MAPMODE | W3_USERIO_HEXDISP_R_MAPMODE));
-   userio_write_hexdisp_left(USERIO_BASEADDR, val/10);
-   userio_write_hexdisp_right(USERIO_BASEADDR, val%10);
-}
-
-void wlan_mac_high_write_hex_display_dots(u8 dots_on){
-	u32 left_hex,right_hex;
-
-	left_hex = userio_read_hexdisp_left(USERIO_BASEADDR);
-	right_hex = userio_read_hexdisp_right(USERIO_BASEADDR);
-
-	if(dots_on){
-		userio_write_hexdisp_left(USERIO_BASEADDR, W3_USERIO_HEXDISP_DP | left_hex);
-		userio_write_hexdisp_right(USERIO_BASEADDR, W3_USERIO_HEXDISP_DP | right_hex);
-	} else {
-		userio_write_hexdisp_left(USERIO_BASEADDR, (~W3_USERIO_HEXDISP_DP) & left_hex);
-		userio_write_hexdisp_right(USERIO_BASEADDR, (~W3_USERIO_HEXDISP_DP) & right_hex);
-	}
-
-}
+//void wlan_mac_high_write_hex_display(u8 val){
+//	//u8 val: 2 digit decimal value to be printed to hex displays
+//   userio_write_control(USERIO_BASEADDR, userio_read_control(USERIO_BASEADDR) | (W3_USERIO_HEXDISP_L_MAPMODE | W3_USERIO_HEXDISP_R_MAPMODE));
+//   userio_write_hexdisp_left(USERIO_BASEADDR, val/10);
+//   userio_write_hexdisp_right(USERIO_BASEADDR, val%10);
+//}
+//
+//void wlan_mac_high_write_hex_display_dots(u8 dots_on){
+//	u32 left_hex,right_hex;
+//
+//	left_hex = userio_read_hexdisp_left(USERIO_BASEADDR);
+//	right_hex = userio_read_hexdisp_right(USERIO_BASEADDR);
+//
+//	if(dots_on){
+//		userio_write_hexdisp_left(USERIO_BASEADDR, W3_USERIO_HEXDISP_DP | left_hex);
+//		userio_write_hexdisp_right(USERIO_BASEADDR, W3_USERIO_HEXDISP_DP | right_hex);
+//	} else {
+//		userio_write_hexdisp_left(USERIO_BASEADDR, (~W3_USERIO_HEXDISP_DP) & left_hex);
+//		userio_write_hexdisp_right(USERIO_BASEADDR, (~W3_USERIO_HEXDISP_DP) & right_hex);
+//	}
+//
+//}
 int wlan_mac_high_memory_test(){
 	//Test DRAM
 	u8 i,j;
