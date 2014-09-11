@@ -10,6 +10,7 @@
 #include "xintc.h"
 #include "warp_protocol.h"
 #include "fragment_receiver.h"
+#include "fragment_sender.h"
 
 #include "wlan_mac_dl_list.h"
 #include "wlan_mac_queue.h"
@@ -27,18 +28,19 @@ function_ptr_t warp_protocol_management_transmit_callback;
 function_ptr_t warp_protocol_data_transmit_callback;
 transmit_element transmit_info;
 
-void warp_protocol_initialize(void* management_transmit_callback, void* data_transmit_callback) {
-	warp_protocol_set_management_transmit_callback(management_transmit_callback);
-	warp_protocol_set_data_transmit_callback(data_transmit_callback);
-	fragment_receiver_initialize();
-}
-
 void warp_protocol_set_management_transmit_callback(void(*callback)()) {
 	warp_protocol_management_transmit_callback = (function_ptr_t)callback;
 }
 
 void warp_protocol_set_data_transmit_callback(void(*callback)()) {
 	warp_protocol_data_transmit_callback = (function_ptr_t)callback;
+}
+
+void warp_protocol_initialize(void(*management_transmit_callback)(), void(*data_transmit_callback)(), void(*eth_send_callback)()) {
+	warp_protocol_set_management_transmit_callback(management_transmit_callback);
+	warp_protocol_set_data_transmit_callback(data_transmit_callback);
+	fragment_receiver_initialize();
+	fragment_sender_initialize(eth_send_callback);
 }
 
 #ifdef WARP_PROTOCOL_DEBUG
@@ -106,13 +108,14 @@ int warp_protocol_process(dl_list* checkout, u8* packet, u16 tx_length) {
 		;
 
 		u32 ethernet_discrepancy = packet - ((tx_packet_buffer*)(tx_queue->buf_ptr))->frame;
+//		print_packett(packet + 12, tx_length - 12);
 		shift_amount = HEADER_OFFSET + read_transmit_header(packet, &tx_length);
 
 		fragment_receive_result* receive_result = fragment_receive(checkout, tx_length - shift_amount, ethernet_discrepancy + shift_amount);
 		shift_amount += FRAGMENT_INFO_LENGTH;
+
 		if (receive_result->status == RECEIVER_READY_TO_SEND) {
 			dl_list* current = receive_result->packet_address;
-
 
 			if (current != checkout) {
 				//Check in the dl_list* checkout now since the packet has been assembled in dl_list* current.
@@ -122,27 +125,31 @@ int warp_protocol_process(dl_list* checkout, u8* packet, u16 tx_length) {
 			tx_queue = (packet_bd*)(current->first);
 
 			tx_length = receive_result->info_address->length;
+//			xil_printf("tx length is %d\n", tx_length);
 			free_fragment_receive_result(receive_result);
 			if (packet[SUBTYPE_INDEX] == SUBTYPE_MANAGEMENT_TRANSMIT) {
 				memmove((void*) ((tx_packet_buffer*)(tx_queue->buf_ptr))->frame, (void*) (packet + shift_amount), tx_length);
 				warp_protocol_management_transmit_callback(current, tx_queue, tx_length, &transmit_info);
 
 				return 0;
+			} else if (packet[SUBTYPE_INDEX] == SUBTYPE_DATA_TRANSMIT) {
+				u8* packet_buffer = ((tx_packet_buffer*)(tx_queue->buf_ptr))->frame;
+//				print_packett(packet_buffer + ethernet_discrepancy + shift_amount, tx_length);
+				u32 new_tx_length = wlan_eth_encap(packet_buffer, transmit_info.dst_mac, transmit_info.src_mac, packet_buffer + ethernet_discrepancy + shift_amount , tx_length);
+//				print_packett(packet_buffer, tx_length + ethernet_discrepancy + shift_amount);
+
+				if (new_tx_length > 0) {
+					memmove((void*) (packet_buffer + ethernet_discrepancy), (void*) (packet_buffer + ethernet_discrepancy + shift_amount + 14), tx_length - 14);
+
+//					print_packett(packet_buffer, new_tx_length);
+
+					warp_protocol_data_transmit_callback(current, tx_queue, new_tx_length, &transmit_info);
+					return 0;
+				} else {
+					xil_printf("Cannot insert data header...\n");
+					queue_checkin(current);
+				}
 			}
-//			else if (packet[SUBTYPE_INDEX] == SUBTYPE_DATA_TRANSMIT) {
-//				u32 new_tx_length = wlan_eth_encap(((tx_packet_buffer*)(tx_queue->buf_ptr))->frame, transmit_info.dst_mac, transmit_info.src_mac, packet + shift_amount , tx_length);
-//
-//				if (new_tx_length > 0) {
-//					memmove((void*) (packet), (void*) (packet + HEADER_OFFSET + shift_amount + 14), tx_length - 14);
-//
-//					//print_packett(packet, tx_length - 14);
-//
-//					warp_protocol_data_transmit_callback(checkout, tx_queue, new_tx_length, &transmit_info);
-//					return 0;
-//				} else {
-//					xil_printf("Cannot insert data header...\n");
-//				}
-//			}
 
 			//print_packett(((tx_packet_buffer*)(tx_queue->buf_ptr))->frame + ethernet_discrepancy + shift_amount, tx_length);
 		} else {

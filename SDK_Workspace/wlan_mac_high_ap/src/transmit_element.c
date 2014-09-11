@@ -12,10 +12,10 @@
 #include "transmit_element.h"
 
 void interpret_transmit_element(u8* packet, transmit_element* transmit_info) {
-	memcpy(&(transmit_info->bssid[0]), &(packet[BSSID_INDEX]), 6);
-	transmit_info->flag = packet[FLAG_INDEX];
-	transmit_info->retry = packet[RETRY_INDEX];
-	transmit_info->length = (packet[PAYLOAD_SIZE_MSB_INDEX] << 8) + packet[PAYLOAD_SIZE_LSB_INDEX];
+	memcpy(&(transmit_info->bssid[0]), &(packet[TRANSMIT_BSSID_INDEX]), 6);
+	transmit_info->flag = packet[TRANSMIT_FLAG_INDEX];
+	transmit_info->retry = packet[TRANSMIT_RETRY_INDEX];
+	transmit_info->length = (packet[TRANSMIT_PAYLOAD_SIZE_MSB_INDEX] << 8) + packet[TRANSMIT_PAYLOAD_SIZE_LSB_INDEX];
 }
 
 void clear_transmit_element(transmit_element* element) {

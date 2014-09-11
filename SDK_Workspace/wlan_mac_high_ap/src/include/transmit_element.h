@@ -10,14 +10,6 @@
 
 #include "warp_protocol.h"
 
-#define TRANSMIT_HEADER_LENGTH             10
-
-#define FLAG_INDEX                         6
-#define RETRY_INDEX                        7
-#define PAYLOAD_SIZE_MSB_INDEX			   8
-#define PAYLOAD_SIZE_LSB_INDEX			   9
-#define BSSID_INDEX						   0
-
 #define DEFAULT_TRANSMIT_FLAG			   0
 #define DEFAULT_TRANSMIT_RETRY			   0
 

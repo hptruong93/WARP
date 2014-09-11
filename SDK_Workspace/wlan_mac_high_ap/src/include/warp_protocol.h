@@ -23,13 +23,23 @@
 #define SUBTYPE_MANAGEMENT_TRANSMIT       0
 #define SUBTYPE_DATA_TRANSMIT			  1
 
+//For type transmit
+#define TRANSMIT_HEADER_INDEX             HEADER_OFFSET
+#define TRANSMIT_HEADER_LENGTH            10 ////6 bytes bssid, 1 for flag, 1 for retry, 2 for length
+#define TRANSMIT_BSSID_INDEX              0
+#define TRANSMIT_FLAG_INDEX               6
+#define TRANSMIT_RETRY_INDEX              7
+#define TRANSMIT_PAYLOAD_SIZE_MSB_INDEX   8
+#define TRANSMIT_PAYLOAD_SIZE_LSB_INDEX   9
+
 //For fragment info
+#define FRAGMENT_INFO_INDEX                           HEADER_OFFSET + TRANSMIT_HEADER_LENGTH
 #define FRAGMENT_INFO_LENGTH                          5
 #define FRAGMENT_ID_INDEX                             0
 #define FRAGMENT_NUMBER_INDEX                         1
 #define FRAGMENT_TOTAL_NUMBER_INDEX                   2
-#define FRAGMENT_BYTE_OFFSET_MSB                      3
-#define FRAGMENT_BYTE_OFFSET_LSB                      4
+#define FRAGMENT_BYTE_OFFSET_MSB_INDEX                3
+#define FRAGMENT_BYTE_OFFSET_LSB_INDEX                4
 
 
 #define SUBTYPE_TRANSMISSION_CONTROL      1
@@ -53,10 +63,8 @@ typedef struct{
 	u8 bssid[6];
 } transmit_element;
 
-void warp_protocol_initialize();
+void warp_protocol_initialize(void(*management_transmit_callback)(), void(*data_transmit_callback)(), void(*eth_send_callback)());
 int warp_protocol_process(dl_list* checkout, u8* data, u16 tx_length);
-void warp_protocol_set_management_transmit_callback(void(*callback)());
-void warp_protocol_set_data_transmit_callback(void(*callback)());
 
 void setup_mac_address_control(u8* buffer, u8 operation, u8* mac_addr);
 

@@ -42,6 +42,7 @@
 #include "wlan_mac_schedule.h"
 #include "wlan_mac_dl_list.h"
 #include "warp_protocol.h"
+#include "fragment_sender.h"
 
 // WLAN Exp includes
 #include "wlan_exp_common.h"
@@ -165,7 +166,7 @@ int main(){
     //wlan_mac_ltg_sched_set_callback(         (void*)ltg_event);
     wlan_mac_util_set_transmit_callback(	 (void*)warp_protocol_process);
 
-    warp_protocol_initialize((void*)send_management_to_wifi, (void*)send_data_to_wifi);
+    warp_protocol_initialize((void*)send_management_to_wifi, (void*)send_data_to_wifi, (void*) eth_pkt_send);
 
     wlan_mac_util_set_eth_encap_mode(ENCAP_MODE_AP);
 
@@ -518,7 +519,7 @@ int eth_pkt_send(void* data, u16 length, u8* warp_protocol_layer, u8 warp_protoc
 		eth_hdr = (ethernet_header*)eth_tx_ptr;
 		memcpy((void*) eth_hdr->address_destination, (void*)&eth_dst[0], 6);
 		memcpy((void*) eth_hdr->address_source, (void*)&eth_mac_addr[0], 6);
-		eth_hdr->type = 44552;//(length >> 8) | (length << 8);
+		eth_hdr->type = 44552;//Magic??? It's 0x8ae
 
 		//copy warp_header;
 		memcpy((void*)(eth_tx_ptr + sizeof(ethernet_header)), (void*) (warp_protocol_layer), warp_protocol_layer_length);
@@ -538,22 +539,11 @@ int eth_pkt_send(void* data, u16 length, u8* warp_protocol_layer, u8 warp_protoc
 void mpdu_rx_process(void* pkt_buf_addr, u8 rate, u16 length) {
 	static unsigned int count = 0;
 	count = (count + 1) % 10000;
-	xil_printf("Received from mac low %d\n", count);
+	xil_printf("Received from mac low %d\n", length);
 	//print_packet(pkt_buf_addr, length);
 
-	static unsigned int fragment_id_count = 0;
-	fragment_id_count = (fragment_id_count + 1) % 255;
-	if (fragment_id_count == 255) {
-		fragment_id_count = 0;
-	}
-
 	void * mpdu = pkt_buf_addr + PHY_RX_PKT_BUF_MPDU_OFFSET;
-	static u8 warp_header[] = { 1, 0, 0x40, 0xD8, 0x55, 0x04, 0x22, 0x84, 0, 0, 0, 0, 99, 1, 1, 0, 0};
-	warp_header[12] = fragment_id_count;
-	warp_header[10] = (length >> 8) & 0xff;
-	warp_header[11] = (length) & 0xff;
-
-	eth_pkt_send((void*) mpdu, length, &(warp_header[0]), sizeof(warp_header));
+	fragmentational_send(SUBTYPE_DATA_TRANSMIT, mpdu, length);
 	return;
 }
 

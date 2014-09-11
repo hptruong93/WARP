@@ -84,7 +84,7 @@ fragment_receive_result* fragment_receive(dl_list* check_out, u32 data_length, u
     u8 id = packet_buffer[FRAGMENT_ID_INDEX];
     u8 fragment_number = packet_buffer[FRAGMENT_NUMBER_INDEX];
     u8 total_number_fragment = packet_buffer[FRAGMENT_TOTAL_NUMBER_INDEX];
-    u16 byte_offset = ((u16)(packet_buffer[FRAGMENT_BYTE_OFFSET_MSB] << 8)) & (packet_buffer[FRAGMENT_BYTE_OFFSET_LSB]);
+    u16 byte_offset = ((u16)(packet_buffer[FRAGMENT_BYTE_OFFSET_MSB_INDEX] << 8)) & (packet_buffer[FRAGMENT_BYTE_OFFSET_LSB_INDEX]);
     fragment_struct* fragment_info = create_info(id, fragment_number, byte_offset, total_number_fragment);
 
 //    xil_printf("fragment id is %d\n", id);
