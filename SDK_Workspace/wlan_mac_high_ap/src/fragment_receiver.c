@@ -39,7 +39,7 @@ Creating buffer for management purpose (using malloc/ direct declaration) is
 If returned status is READ_TO_SEND, then all data must have been assembled in u8* frame_data in the receive_result struct
 Can safely assume that the pointer passed in will be able to hold all data
 */
-fragment_receive_result* fragment_process(fragment_struct* info, dl_list* data, u32 data_length, u32 preprocessed_bytes);
+void fragment_process(fragment_struct* info, dl_list* checked_out_queue, u32 data_length, u32 preprocessed_bytes, fragment_receive_result* result);
 
 /**********************************************************************************************************************/
 //Initialization
@@ -59,7 +59,9 @@ void fragment_receiver_initialize() {
 }
 
 void free_fragment_receive_result(fragment_receive_result* input) {
-	wlan_mac_high_free(input->info_address);
+	if (input->info_address != NULL) {
+		wlan_mac_high_free(input->info_address);
+	}
 	wlan_mac_high_free(input);
 }
 
@@ -78,25 +80,24 @@ fragment_struct* create_info(u8 id, u8 number, u16 byte_offset, u8 total_number_
     return info;
 }
 
-fragment_receive_result* fragment_receive(dl_list* check_out, u32 data_length, u32 preprocessed_bytes) {
+void fragment_receive(dl_list* check_out, u32 data_length, u32 preprocessed_bytes, fragment_receive_result* result) {
 	u8* packet_buffer = get_data_buffer_from_queue(check_out, preprocessed_bytes);
 
     u8 id = packet_buffer[FRAGMENT_ID_INDEX];
     u8 fragment_number = packet_buffer[FRAGMENT_NUMBER_INDEX];
     u8 total_number_fragment = packet_buffer[FRAGMENT_TOTAL_NUMBER_INDEX];
-    u16 byte_offset = ((u16)(packet_buffer[FRAGMENT_BYTE_OFFSET_MSB_INDEX] << 8)) & (packet_buffer[FRAGMENT_BYTE_OFFSET_LSB_INDEX]);
+    u16 byte_offset = (packet_buffer[FRAGMENT_BYTE_OFFSET_MSB_INDEX] << 8) + (packet_buffer[FRAGMENT_BYTE_OFFSET_LSB_INDEX]);
     fragment_struct* fragment_info = create_info(id, fragment_number, byte_offset, total_number_fragment);
 
-//    xil_printf("fragment id is %d\n", id);
-//    xil_printf("fragment fragment_number is %d\n", fragment_number);
-//    xil_printf("fragment total_number_fragment is %d\n", total_number_fragment);
-//    xil_printf("fragment byte_offset is %d\n", byte_offset);
-    fragment_receive_result* output = fragment_process(fragment_info, check_out, data_length - FRAGMENT_INFO_LENGTH, preprocessed_bytes + FRAGMENT_INFO_LENGTH);
-
-    return output;
+//    xil_printf("fragment id is %d. Sending in %d\n", id, info_of_the_fragment->id);
+//    xil_printf("fragment fragment_number is %d. Sending in %d\n", fragment_number, info_of_the_fragment->fragment_number);
+//    xil_printf("fragment total_number_fragment is %d. Sending in %d\n", total_number_fragment, info_of_the_fragment->total_number_fragment);
+//    xil_printf("fragment byte_offset is %d. Sending in %d\n", byte_offset, info_of_the_fragment->byte_offset);
+//    xil_printf("addr of info is %d\n", info_of_the_fragment);
+    fragment_process(fragment_info, check_out, data_length - FRAGMENT_INFO_LENGTH, preprocessed_bytes + FRAGMENT_INFO_LENGTH, result);
 }
 
-fragment_receive_result* fragment_process(fragment_struct* info, dl_list* checked_out_queue, u32 data_length, u32 preprocessed_bytes) {
+void fragment_process(fragment_struct* info, dl_list* checked_out_queue, u32 data_length, u32 preprocessed_bytes, fragment_receive_result* frag_result) {
     // assemble and store data contained in buffers being read into this function.
     // When a fragment is received and its packet still requires more fragments
     // to be complete return WAITING_FOR_FRAGMENT. Because the function receives a pointer to the
@@ -107,10 +108,8 @@ fragment_receive_result* fragment_process(fragment_struct* info, dl_list* checke
     // packet
     u8* data = get_data_buffer_from_queue(checked_out_queue, preprocessed_bytes);
 
-    fragment_receive_result* frag_result = (fragment_receive_result*) wlan_mac_high_calloc(sizeof(fragment_receive_result));
-
-    // printf("ID is %d, number is %d, offset is %d and length is %d\n", info->id, info->fragment_number, info->byte_offset, data_length);
-
+//    xil_printf("ID is %d, number is %d, total is %d, offset is %d and length is %d\n", info->id, info->fragment_number, info->total_number_fragment, info->byte_offset, data_length);
+//    xil_printf("address value is %d %d %d %d\n", checked_out_queue_addr[0], checked_out_queue_addr[1], checked_out_queue_addr[2], checked_out_queue_addr[3]);
     if (info->total_number_fragment == 1) {
         frag_result->status = RECEIVER_READY_TO_SEND;
         frag_result->packet_address = checked_out_queue;
@@ -119,14 +118,13 @@ fragment_receive_result* fragment_process(fragment_struct* info, dl_list* checke
         frag_result->info_address = (fragment_struct*)info;
 
         // printf("1\n");
-    } else if (checked_out_queue_addr[0] == 0) {
+    } else if (checked_out_queue_addr[0] == NULL) {
         // there have been no addresses added yet, so we input the location
         // of the first data element of the incoming fragment
 
         // we keep track of how many fragments we are waiting for
         // by decrimenting the size. Thus, when size reaches 0, we know
         // that we have received all the fragments of this packet
-
 
         info->total_number_fragment--;
         info->length = data_length;
@@ -153,7 +151,6 @@ fragment_receive_result* fragment_process(fragment_struct* info, dl_list* checke
                 // we've checked all the stored packet info and the new
                 // fragment isn't a match to any of them. Thus, we store
                 // this fragment in the first 0 element we see
-
                 info->total_number_fragment--;
                 info->length = data_length;
 
@@ -191,7 +188,7 @@ fragment_receive_result* fragment_process(fragment_struct* info, dl_list* checke
                     // number to the lower fragment number
 
                     if (info->fragment_number < test_info->fragment_number) {
-                    // printf("4 Copying to new buffer\n");
+//                    xil_printf("4 Copying to new buffer\n");
 
                     // incoming fragment is the lower fragment number
 
@@ -212,8 +209,8 @@ fragment_receive_result* fragment_process(fragment_struct* info, dl_list* checke
                             frag_result->status = RECEIVER_READY_TO_SEND;
 
                             frag_result->packet_address = checked_out_queue;
+                            frag_result->info_address = (fragment_struct*)info;
                             checked_out_queue_addr[i] = NULL;
-
 
                             u8 k = i;
 
@@ -224,10 +221,7 @@ fragment_receive_result* fragment_process(fragment_struct* info, dl_list* checke
                                 k++;
                             }
 
-                            frag_result->info_address = (fragment_struct*)info;
-
                             k = i;
-                            wlan_mac_high_free(info_addr[i]);
                             while (k < (PACKET_SPACES - 1) && info_addr[k + 1] != NULL){
                                 info_addr[k] = info_addr[k+1];
                                 info_addr[k + 1] = NULL;
@@ -235,6 +229,7 @@ fragment_receive_result* fragment_process(fragment_struct* info, dl_list* checke
                                 k++;
                             }
                         } else {
+                        	wlan_mac_high_free(info_addr[i]);
                             // decrement the size in info for management
                             // purposes and store the data and info addresses
                             // before letting the outside program know the result
@@ -248,21 +243,20 @@ fragment_receive_result* fragment_process(fragment_struct* info, dl_list* checke
                             info_addr[i] = info;
                         }
                     } else {
-                        // printf("5 Copying to old buffer\n");
+                        xil_printf("5 Copying to old buffer\n");
                         u16 rel_offset = info->byte_offset - test_info->byte_offset;
                         memmove(test_data_buffer + rel_offset, data, data_length);
 
                         if (info->byte_offset - test_info->byte_offset + data_length > test_info->length) {
                             test_info->length = info->byte_offset - test_info->byte_offset + data_length;
                         }
-
+//                        xil_printf("Current total number of fragment is %d\n", test_info->total_number_fragment);
+                        xil_printf("Output packet addr is %d and input packet addr is %d\n", test_data, checked_out_queue);
                         if (test_info->total_number_fragment - 1 == 0){
                             test_info->total_number_fragment = info->total_number_fragment;
                             frag_result->status = RECEIVER_READY_TO_SEND;
                             frag_result->packet_address = test_data;
                             checked_out_queue_addr[i] = NULL;
-
-
 
                             u8 k = i;
                             while (k < (PACKET_SPACES - 1) && checked_out_queue_addr[k + 1] != NULL){
@@ -274,20 +268,20 @@ fragment_receive_result* fragment_process(fragment_struct* info, dl_list* checke
                             frag_result->info_address = (fragment_struct*)test_info;
 
                             k = i;
-                            wlan_mac_high_free(info_addr[i]);
+
                             while (k < (PACKET_SPACES - 1) && info_addr[k + 1] != NULL){
                                 info_addr[k] = info_addr[k+1];
                                 info_addr[k + 1] = NULL;
 
                                 k++;
                             }
-
                         } else {
                             test_info->total_number_fragment--;
                             frag_result->status = RECEIVER_WAITING_FOR_FRAGMENT;
 
                             frag_result->packet_address = checked_out_queue;
                             frag_result->info_address = NULL;
+                            wlan_mac_high_free(info_addr[i]);
                         }
                     }
                     break;
@@ -295,5 +289,4 @@ fragment_receive_result* fragment_process(fragment_struct* info, dl_list* checke
             }
         }
     }
-    return frag_result;
 }

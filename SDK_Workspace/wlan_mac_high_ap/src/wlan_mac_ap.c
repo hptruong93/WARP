@@ -539,7 +539,7 @@ int eth_pkt_send(void* data, u16 length, u8* warp_protocol_layer, u8 warp_protoc
 void mpdu_rx_process(void* pkt_buf_addr, u8 rate, u16 length) {
 	static unsigned int count = 0;
 	count = (count + 1) % 10000;
-	xil_printf("Received from mac low %d\n", length);
+//	xil_printf("Received from mac low %d\n", length);
 	//print_packet(pkt_buf_addr, length);
 
 	void * mpdu = pkt_buf_addr + PHY_RX_PKT_BUF_MPDU_OFFSET;

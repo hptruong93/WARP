@@ -225,6 +225,7 @@ void queue_checkout(dl_list* new_list, u16 num_packet_bd){
 }
 
 void queue_checkin(dl_list* list){
+//	xil_printf("Checking in %d\n", list);
 	packet_bd* curr_packet_bd;
 	packet_bd* next_packet_bd;
 

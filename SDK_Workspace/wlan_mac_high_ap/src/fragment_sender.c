@@ -33,30 +33,37 @@ u8 generate_fragment_id() {
 
 //Type has to be TYPE_TRANSMIT
 void fragmentational_send(u8 subtype, u8* packet, u16 length) {
-	if (length > 1400) {
-		return;
-	}
 	static u8 warp_header[] = { 1, 0, 0x40, 0xD8, 0x55, 0x04, 0x22, 0x84, 0, 0, 0, 0, 99, 1, 1, 0, 0 };
 
 	u8 fragment_id = generate_fragment_id();
 	warp_header[SUBTYPE_INDEX] = subtype;
+	warp_header[FRAGMENT_INFO_INDEX + FRAGMENT_ID_INDEX] = fragment_id;
 
 	if (length + sizeof(warp_header) <= MAX_ETHERNET_LENGTH) {
 		//Send in one shot
-		warp_header[FRAGMENT_INFO_INDEX + FRAGMENT_ID_INDEX] = fragment_id;
-		warp_header[TRANSMIT_HEADER_INDEX + TRANSMIT_PAYLOAD_SIZE_MSB_INDEX] = (length >> 8) & 0xff;
-		warp_header[TRANSMIT_HEADER_INDEX + TRANSMIT_PAYLOAD_SIZE_LSB_INDEX] = (length) & 0xff;
+		warp_header[TRANSMIT_HEADER_INDEX + TRANSMIT_PAYLOAD_SIZE_MSB_INDEX] = ((length + FRAGMENT_INFO_LENGTH) >> 8) & 0xff;
+		warp_header[TRANSMIT_HEADER_INDEX + TRANSMIT_PAYLOAD_SIZE_LSB_INDEX] = ((length + FRAGMENT_INFO_LENGTH)) & 0xff;
+
+		warp_header[FRAGMENT_INFO_INDEX + FRAGMENT_NUMBER_INDEX] = 1;
+		warp_header[FRAGMENT_INFO_INDEX + FRAGMENT_TOTAL_NUMBER_INDEX] = 1;
+
 		fragment_send_eth_callback((void*) packet, length, &(warp_header[0]), sizeof(warp_header));
 	} else {
-		xil_printf("exceed %d\n", length);
+		xil_printf("exceed %d %d %d\n", length, sizeof(warp_header), MAX_ETHERNET_LENGTH - sizeof(warp_header));
+		xil_printf("ID is %d\n", fragment_id);
 		//Fragment the packet
 		u16 fragment_max_length = MAX_ETHERNET_LENGTH - sizeof(warp_header);
 
 		u8 total_number_fragment = (length % fragment_max_length == 0) ? (length / fragment_max_length) : (length / fragment_max_length + 1);
-		u8 packet_count = 0;
-		for (; packet_count < total_number_fragment; packet_count++) {
+		warp_header[FRAGMENT_INFO_INDEX + FRAGMENT_TOTAL_NUMBER_INDEX] = total_number_fragment;
+
+		u8 fragment_count = 0;
+		for (; fragment_count < total_number_fragment; fragment_count++) {
+			//Resolve new fragment number
+			warp_header[FRAGMENT_INFO_INDEX + FRAGMENT_NUMBER_INDEX] = fragment_count;
+
 			//Resolve new offset
-			u16 byte_offset = packet_count * fragment_max_length;
+			u16 byte_offset = fragment_count * fragment_max_length;
 			warp_header[FRAGMENT_INFO_INDEX + FRAGMENT_BYTE_OFFSET_MSB_INDEX] = (byte_offset >> 8) & 0xff;
 			warp_header[FRAGMENT_INFO_INDEX + FRAGMENT_BYTE_OFFSET_LSB_INDEX] = byte_offset & 0xff;
 
@@ -67,7 +74,9 @@ void fragmentational_send(u8 subtype, u8* packet, u16 length) {
 			} else {
 				fragment_length = length - byte_offset;
 			}
+
 			fragment_length += FRAGMENT_INFO_LENGTH;
+			xil_printf("Offset is %d. Length is %d\n", byte_offset, fragment_length);
 			warp_header[TRANSMIT_HEADER_INDEX + TRANSMIT_PAYLOAD_SIZE_MSB_INDEX] = (fragment_length >> 8) & 0xff;
 			warp_header[TRANSMIT_HEADER_INDEX + TRANSMIT_PAYLOAD_SIZE_LSB_INDEX] = fragment_length & 0xff;
 
