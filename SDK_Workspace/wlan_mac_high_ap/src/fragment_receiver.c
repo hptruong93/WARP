@@ -155,7 +155,7 @@ void fragment_process(fragment_struct* new_info, packet_bd* incoming_packet, u32
     // return READY_TO_SEND so that the main program knows that
     // the first element of the addresses array contains the address to the reassembled
     // packet
-	xil_printf("ID is %d, number is %d, total is %d, offset is %d and length is %d with input queue %d\n", new_info->id, new_info->fragment_number, new_info->total_number_fragment, new_info->byte_offset, data_length, incoming_packet);
+//	xil_printf("ID is %d, number is %d, total is %d, offset is %d and length is %d with input queue %d\n", new_info->id, new_info->fragment_number, new_info->total_number_fragment, new_info->byte_offset, data_length, incoming_packet);
 //	xil_printf("data buffer starts at %x\n", get_data_buffer_from_queue(incoming_packet, 0));
 
 	if (new_info->total_number_fragment == 1) {
@@ -173,7 +173,7 @@ void fragment_process(fragment_struct* new_info, packet_bd* incoming_packet, u32
 			fragment_process(new_info, incoming_packet, data_length, preprocessed_bytes, result);
 		} else if (info_addr[found] == NULL) {
 			//This is the first fragment of this given ID
-			xil_printf("First fragment of the id...\n");
+//			xil_printf("First fragment of the id...\n");
 			//Move data to the right position
 			queue_copy_fragment(incoming_packet, incoming_packet, preprocessed_bytes, preprocessed_bytes + new_info->byte_offset, data_length);
 
@@ -192,7 +192,7 @@ void fragment_process(fragment_struct* new_info, packet_bd* incoming_packet, u32
 			fragment_struct* previous_info = info_addr[found];
 			packet_bd* previous_queue = checked_out_queue_addr[found];
 
-			xil_printf("Copy to old queue index number %d\n", found);
+//			xil_printf("Copy to old queue index number %d\n", found);
 			//Move data from incoming queue to old queue
 			queue_copy_fragment(previous_queue, incoming_packet, preprocessed_bytes + new_info->byte_offset, preprocessed_bytes, data_length);
 

@@ -10,7 +10,7 @@
 #include "fragment_sender.h"
 #include "warp_protocol.h"
 
-#define MAX_ETHERNET_LENGTH                           1475
+#define MAX_ETHERNET_LENGTH                           100//1475
 
 function_ptr_t fragment_send_eth_callback;
 

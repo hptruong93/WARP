@@ -113,7 +113,7 @@ int warp_protocol_process(dl_list* checkout, u8* packet, u16 tx_length) {
 		fragment_receive(tx_queue, tx_length - shift_amount, ethernet_discrepancy + shift_amount, receive_result);
 		shift_amount += FRAGMENT_INFO_LENGTH;
 
-		xil_printf("Status is %d\n", receive_result->status);
+//		xil_printf("Status is %d\n", receive_result->status);
 		if (receive_result->status == RECEIVER_READY_TO_SEND) {
 			packet_bd* current = receive_result->packet_address;
 			u8* data_buffer = ((tx_packet_buffer*)(current->buf_ptr))->frame;
@@ -130,14 +130,28 @@ int warp_protocol_process(dl_list* checkout, u8* packet, u16 tx_length) {
 				warp_protocol_management_transmit_callback(&new_queue, current, tx_length, &transmit_info);
 				return 0;
 			} else if (packet[SUBTYPE_INDEX] == SUBTYPE_DATA_TRANSMIT) {
-//				print_packett(packet_buffer + ethernet_discrepancy + shift_amount, tx_length);
+//				xil_printf("Before -----------------------------------------------------\n");
+//				print_packett(data_buffer, tx_length + ethernet_discrepancy);
 				u32 new_tx_length = wlan_eth_encap(data_buffer, transmit_info.dst_mac, transmit_info.src_mac, data_buffer + ethernet_discrepancy + shift_amount , tx_length);
-//				print_packett(packet_buffer, tx_length + ethernet_discrepancy + shift_amount);
+
+//				if (transmit_info.dst_mac[5] == 0x8c) {
+//					xil_printf("After -----------------------------------------------------\n");
+//					print_packett(data_buffer, tx_length + ethernet_discrepancy);
+//				}
 
 				if (new_tx_length > 0) {
 					memmove((void*) (data_buffer + ethernet_discrepancy), (void*) (data_buffer + ethernet_discrepancy + shift_amount + 14), tx_length - 14);
-//					print_packett(packet_buffer, new_tx_length);
-					warp_protocol_data_transmit_callback(current, current, new_tx_length, &transmit_info);
+//					if (transmit_info.dst_mac[5] == 0x8c) {
+//						print_packett(data_buffer, new_tx_length);
+//						xil_printf("End -----------------------------------------------------\n\n");
+//					}
+
+					//Create queue
+					dl_list new_queue;
+					queue_checkout(&new_queue, 0);
+					dl_node_insertBeginning(&new_queue, (dl_node*)current); //See wlan_mac_queue.h for the (dl_node*) cast
+
+					warp_protocol_data_transmit_callback(&new_queue, current, new_tx_length, &transmit_info);
 					return 0;
 				} else {
 					xil_printf("Cannot insert data header...\n");
