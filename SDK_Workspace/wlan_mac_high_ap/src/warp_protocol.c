@@ -81,7 +81,7 @@ u8 read_mac_control_header(u8* packet, u16* length) {
 void print_packett(void* packet, u16 tx_length) {
 	u16 i = 0;
 	u8* tx_pkt = packet;
-	xil_printf("packet length: %d\n", tx_length);
+	xil_printf("packet length: %d at %d\n", tx_length, packet);
 	while (i < tx_length) {
 		xil_printf(" %02x ", (u8)tx_pkt[i]);
 		i++;
@@ -90,7 +90,6 @@ void print_packett(void* packet, u16 tx_length) {
 }
 
 int warp_protocol_process(dl_list* checkout, u8* packet, u16 tx_length) {
-//	xil_printf("Queue length is %d with address %d\n", checkout->length, checkout);
 	packet_bd* tx_queue = (packet_bd*)(checkout->first);
 
 #ifdef WARP_PROTOCOL_DEBUG
@@ -105,65 +104,51 @@ int warp_protocol_process(dl_list* checkout, u8* packet, u16 tx_length) {
 #ifdef WARP_PROTOCOL_DEBUG
 		xil_printf("Transmit\n");
 #endif
-
 		;
 
 		u32 ethernet_discrepancy = packet - ((tx_packet_buffer*)(tx_queue->buf_ptr))->frame;
-//		print_packett(packet + 12, tx_length - 12);
 		shift_amount = HEADER_OFFSET + read_transmit_header(packet, &tx_length);
 
 		fragment_receive_result* receive_result = (fragment_receive_result*) wlan_mac_high_calloc(sizeof(fragment_receive_result));
-		fragment_receive(checkout, tx_length - shift_amount, ethernet_discrepancy + shift_amount, receive_result);
+		fragment_receive(tx_queue, tx_length - shift_amount, ethernet_discrepancy + shift_amount, receive_result);
 		shift_amount += FRAGMENT_INFO_LENGTH;
 
-//		xil_printf("Status is %d and addr is %d while input addr is %d\n", receive_result->status, receive_result->packet_address, checkout);
+		xil_printf("Status is %d\n", receive_result->status);
 		if (receive_result->status == RECEIVER_READY_TO_SEND) {
-			dl_list* current = receive_result->packet_address;
-//			xil_printf("Assembled. Going. Current is %d and checkout is %d\n", current, checkout);
-
-			if (current != checkout) {
-				//Check in the dl_list* checkout now since the packet has been assembled in dl_list* current.
-				//Otherwise, packet is assembled into the current dl_list* checkout and will be checked in of once the packet is sent.
-//				xil_printf("Checkin top\n");
-				queue_checkin(checkout);
-			}
-			tx_queue = (packet_bd*)(current->first);
-
+			packet_bd* current = receive_result->packet_address;
+			u8* data_buffer = ((tx_packet_buffer*)(current->buf_ptr))->frame;
 			tx_length = receive_result->info_address->length;
-//			xil_printf("tx length is %d\n", tx_length);
+
+			//Create queue
+			dl_list new_queue;
+			queue_checkout(&new_queue, 0);
+			dl_node_insertBeginning(&new_queue, (dl_node*)current); //See wlan_mac_queue.h for the (dl_node*) cast
+
 			free_fragment_receive_result(receive_result);
 			if (packet[SUBTYPE_INDEX] == SUBTYPE_MANAGEMENT_TRANSMIT) {
-				memmove((void*) ((tx_packet_buffer*)(tx_queue->buf_ptr))->frame, (void*) (packet + shift_amount), tx_length);
-				warp_protocol_management_transmit_callback(current, tx_queue, tx_length, &transmit_info);
+				memmove((void*) data_buffer, (void*) (data_buffer + ethernet_discrepancy + shift_amount), tx_length);
+				warp_protocol_management_transmit_callback(&new_queue, current, tx_length, &transmit_info);
 				return 0;
 			} else if (packet[SUBTYPE_INDEX] == SUBTYPE_DATA_TRANSMIT) {
-				u8* packet_buffer = ((tx_packet_buffer*)(tx_queue->buf_ptr))->frame;
 //				print_packett(packet_buffer + ethernet_discrepancy + shift_amount, tx_length);
-				u32 new_tx_length = wlan_eth_encap(packet_buffer, transmit_info.dst_mac, transmit_info.src_mac, packet_buffer + ethernet_discrepancy + shift_amount , tx_length);
+				u32 new_tx_length = wlan_eth_encap(data_buffer, transmit_info.dst_mac, transmit_info.src_mac, data_buffer + ethernet_discrepancy + shift_amount , tx_length);
 //				print_packett(packet_buffer, tx_length + ethernet_discrepancy + shift_amount);
 
 				if (new_tx_length > 0) {
-					memmove((void*) (packet_buffer + ethernet_discrepancy), (void*) (packet_buffer + ethernet_discrepancy + shift_amount + 14), tx_length - 14);
+					memmove((void*) (data_buffer + ethernet_discrepancy), (void*) (data_buffer + ethernet_discrepancy + shift_amount + 14), tx_length - 14);
 //					print_packett(packet_buffer, new_tx_length);
-					warp_protocol_data_transmit_callback(current, tx_queue, new_tx_length, &transmit_info);
+					warp_protocol_data_transmit_callback(current, current, new_tx_length, &transmit_info);
 					return 0;
 				} else {
 					xil_printf("Cannot insert data header...\n");
-					queue_checkin(current);
+					queue_checkin_packet_bd(current);
 				}
 			}
 
 			//print_packett(((tx_packet_buffer*)(tx_queue->buf_ptr))->frame + ethernet_discrepancy + shift_amount, tx_length);
 		} else {
-			if (receive_result->packet_address != NULL) {
-				xil_printf("Checking in ...\n");
-				queue_checkin(receive_result->packet_address);
-			}
 			free_fragment_receive_result(receive_result);
 		}
-
-
-
 
 		break;
 	case TYPE_CONTROL:

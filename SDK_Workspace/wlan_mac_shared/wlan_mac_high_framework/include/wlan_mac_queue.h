@@ -53,10 +53,13 @@ int queue_init();
 void enqueue_after_end(u16 queue_sel, dl_list* list);
 void dequeue_from_beginning(dl_list* new_list, u16 queue_sel, u16 num_packet_bd);
 
+void create_queue_element(dl_list* result, packet_bd* data);
 
 //Functions for checking in and out packet_bds from the free ring
 void queue_checkout(dl_list* new_list, u16 num_packet_bd);
 void queue_checkin(dl_list* list);
+void queue_checkin_packet_bd(packet_bd* packet);
+
 inline u32 queue_num_free();
 inline u32 queue_num_queued(u16 queue_sel);
 

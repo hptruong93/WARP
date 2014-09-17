@@ -465,6 +465,7 @@ void send_management_to_wifi(dl_list* checkout, packet_bd*	tx_queue, u16 tx_leng
 		check_tx_queue();
 		//xil_printf("pkt_transmitted\n");
 	} else {
+		xil_printf("Memory problem???\n");
 		queue_checkin(checkout);
 		memory_issue_cnt += 1;
 	}
@@ -481,6 +482,7 @@ void send_data_to_wifi(dl_list* checkout, packet_bd*	tx_queue, u16 tx_length, tr
 		check_tx_queue();
 		//xil_printf("pkt_transmitted\n");
 	} else {
+		xil_printf("Memory problem???\n");
 		queue_checkin(checkout);
 		memory_issue_cnt += 1;
 	}

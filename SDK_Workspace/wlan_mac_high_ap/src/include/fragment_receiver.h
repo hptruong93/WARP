@@ -16,7 +16,7 @@
 
 typedef struct {
     u8 status;
-    dl_list* packet_address;
+    packet_bd* packet_address;
     fragment_struct* info_address;
 } fragment_receive_result;
 
@@ -24,7 +24,7 @@ void fragment_receiver_initialize();
 
 //The buffer will starts with fragment info. WARP should not distinguish between management and data packets
 //After use, must call free_fragment_receive_result of the output to avoid memory leak.
-void fragment_receive(dl_list* check_out, u32 data_length, u32 preprocessed_bytes, fragment_receive_result* result);
+void fragment_receive(packet_bd* check_out, u32 data_length, u32 preprocessed_bytes, fragment_receive_result* result);
 
 void free_fragment_receive_result(fragment_receive_result* input);
 

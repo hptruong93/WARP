@@ -185,6 +185,11 @@ void dequeue_from_beginning(dl_list* new_list, u16 queue_sel, u16 num_packet_bd)
 	return;
 }
 
+void create_queue_element(dl_list* result, packet_bd* data) {
+	queue_checkout(result, 0);
+	dl_node_insertBeginning(result, (dl_node*) data);
+}
+
 u32 queue_num_free(){
 	return queue_free.length;
 }
@@ -239,6 +244,13 @@ void queue_checkin(dl_list* list){
 	}
 
 	return;
+}
+
+void queue_checkin_packet_bd(packet_bd* packet) {
+	dl_list new_queue;
+	queue_checkout(&new_queue, 0);
+	dl_node_insertBeginning(&new_queue, (dl_node*) packet);
+	queue_checkin(&new_queue);
 }
 
 int wlan_mac_queue_poll(u16 queue_sel){
