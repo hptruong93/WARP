@@ -620,7 +620,8 @@ int wlan_eth_encap(u8* mpdu_start_ptr, u8* eth_dest, u8* eth_src, u8* eth_start_
 				break;
 				default:
 					//Unknown/unsupported EtherType; don't process the Eth frame
-					xil_printf("Unknown type: %d", eth_hdr->type);
+					xil_printf("Unknown type: %d\n", eth_hdr->type);
+					llc_hdr->type = eth_hdr->type;
 					return 0;
 				break;
 			}

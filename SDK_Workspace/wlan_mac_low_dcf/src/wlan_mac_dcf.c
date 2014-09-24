@@ -433,7 +433,7 @@ u32 frame_receive(void* pkt_buf_addr, u8 rate, u16 length){
 		if(unicast_to_me || to_broadcast){
 			return_value |= POLL_MAC_ADDR_MATCH;
 
-			//if(!WLAN_IS_CTRL_FRAME(rx_header)) {
+			if(!WLAN_IS_CTRL_FRAME(rx_header)) {
 				//This packet should be passed up to CPU_high for further processing
 
 				if(unicast_to_me){
@@ -464,7 +464,7 @@ u32 frame_receive(void* pkt_buf_addr, u8 rate, u16 length){
 						warp_printf(PL_ERROR, "Error: received non-control packet of length %d, which is not valid\n", length);
 					}
 				}
-			//} //END if(not control packet)
+			} //END if(not control packet)
 		} //END if (to_me or to_broadcast)
 	}  else { //END if (FCS good)
 
