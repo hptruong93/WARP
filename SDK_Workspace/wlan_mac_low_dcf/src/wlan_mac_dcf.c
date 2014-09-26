@@ -840,6 +840,7 @@ inline u32 poll_mac_rx(){
 			break;
 		}
 
+		xil_printf("len %d\n", length);
 		if(wlan_mac_get_rx_phy_sel() == WLAN_RX_PHY_OFDM) {
 			//OFDM packet is being received
 			return_status |= frame_receive((void *)RX_PKT_BUF_TO_ADDR(rx_pkt_buf), rate, length);

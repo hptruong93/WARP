@@ -24,7 +24,8 @@
 #define WLAN_MAC_AP_H_
 
 #include "wlan_mac_dl_list.h"
-#include "transmit_element.h"
+#include "warp_protocol.h"
+
 
 // **********************************************************************
 // Switches for various modes

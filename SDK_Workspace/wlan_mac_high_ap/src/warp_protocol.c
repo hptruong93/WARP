@@ -36,11 +36,11 @@ void warp_protocol_set_data_transmit_callback(void(*callback)()) {
 	warp_protocol_data_transmit_callback = (function_ptr_t)callback;
 }
 
-void warp_protocol_initialize(void(*management_transmit_callback)(), void(*data_transmit_callback)(), void(*eth_send_callback)()) {
+void warp_protocol_initialize(void(*management_transmit_callback)(), void(*data_transmit_callback)(), u8* eth_send_dst) {
 	warp_protocol_set_management_transmit_callback(management_transmit_callback);
 	warp_protocol_set_data_transmit_callback(data_transmit_callback);
 	fragment_receiver_initialize();
-	fragment_sender_initialize(eth_send_callback);
+	fragment_sender_initialize(eth_send_dst);
 }
 
 #ifdef WARP_PROTOCOL_DEBUG

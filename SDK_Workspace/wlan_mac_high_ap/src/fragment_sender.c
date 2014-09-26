@@ -5,21 +5,23 @@
  *      Author: Hoai Phuoc Truong
  */
 
+#include "stdlib.h"
+#include "string.h"
 #include "xil_types.h"
 #include "xintc.h"
+
+#include "wlan_mac_eth_util.h"
+#include "wlan_mac_high.h"
 #include "fragment_sender.h"
 #include "warp_protocol.h"
 
-#define MAX_ETHERNET_LENGTH                           100//1475
+#define MAX_ETHERNET_LENGTH                           1475
 
-function_ptr_t fragment_send_eth_callback;
+static u8 eth_dst[6]		= { 0x00, 0x0D, 0xB9, 0x34, 0x17, 0x29 };//The PC Engine ethernet MAC
+static u8 eth_mac_addr[6] =   { 0x40, 0xd8, 0x5, 0x04, 0x22, 0x84 };
 
-void set_eth_pkt_send_callback(void(*callback)()) {
-	fragment_send_eth_callback = (function_ptr_t) callback;
-}
-
-void fragment_sender_initialize(void(*callback)()) {
-	set_eth_pkt_send_callback(callback);
+void fragment_sender_initialize(u8* warp_eth_mac_addr) {
+	memcpy(eth_mac_addr, warp_eth_mac_addr, 6);
 }
 
 u8 generate_fragment_id() {
@@ -29,6 +31,45 @@ u8 generate_fragment_id() {
 		fragment_id_count = 0;
 	}
 	return fragment_id_count;
+}
+
+int eth_pkt_send(void* data, u16 length, u8* warp_protocol_layer, u8 warp_protocol_layer_length) {
+	int status;
+	u32 eth_tx_len;
+	//u16 ipv4_pkt_len, udp_pkt_len;
+	u8* eth_tx_ptr;
+	dl_list checkout;
+	packet_bd* queue_entry;
+	ethernet_header* eth_hdr;
+	//ipv4_header* ip_hdr;
+	//udp_header* udp_hdr;
+
+	eth_tx_len = sizeof(ethernet_header) + length;
+	queue_checkout(&checkout, 1);
+
+	if (checkout.length == 1) {
+		queue_entry = (packet_bd*)(checkout.first);
+		eth_tx_ptr = (u8*)queue_entry->buf_ptr;
+
+		//ethernet header
+		eth_hdr = (ethernet_header*)eth_tx_ptr;
+		memcpy((void*) eth_hdr->address_destination, (void*)&eth_dst[0], 6);
+		memcpy((void*) eth_hdr->address_source, (void*)&eth_mac_addr[0], 6);
+		eth_hdr->type = 44552;//Magic??? It's 0x8ae
+
+		//copy warp_header;
+		memcpy((void*)(eth_tx_ptr + sizeof(ethernet_header)), (void*) (warp_protocol_layer), warp_protocol_layer_length);
+		//copy payload
+		memcpy((void*)(eth_tx_ptr + sizeof(ethernet_header) + warp_protocol_layer_length) , (void*) data, length);
+
+		//send and then free memory
+		status = wlan_eth_dma_send(eth_tx_ptr, eth_tx_len + warp_protocol_layer_length);
+		queue_checkin(&checkout);
+		if(status != 0) {xil_printf("Error in wlan_mac_send_eth! Err = %d\n", status); return -1;}
+	} else {
+		xil_printf("unable to allocate memory for eth");
+	}
+	return 0;
 }
 
 //Type has to be TYPE_TRANSMIT
@@ -47,7 +88,7 @@ void fragmentational_send(u8 subtype, u8* packet, u16 length) {
 		warp_header[FRAGMENT_INFO_INDEX + FRAGMENT_NUMBER_INDEX] = 1;
 		warp_header[FRAGMENT_INFO_INDEX + FRAGMENT_TOTAL_NUMBER_INDEX] = 1;
 
-		fragment_send_eth_callback((void*) packet, length, &(warp_header[0]), sizeof(warp_header));
+		eth_pkt_send((void*) packet, length, &(warp_header[0]), sizeof(warp_header));
 	} else {
 		xil_printf("exceed %d %d %d\n", length, sizeof(warp_header), MAX_ETHERNET_LENGTH - sizeof(warp_header));
 		xil_printf("ID is %d\n", fragment_id);
@@ -81,7 +122,7 @@ void fragmentational_send(u8 subtype, u8* packet, u16 length) {
 			warp_header[TRANSMIT_HEADER_INDEX + TRANSMIT_PAYLOAD_SIZE_LSB_INDEX] = fragment_length & 0xff;
 
 			//Send
-			fragment_send_eth_callback((void*) (packet + byte_offset), fragment_length, &(warp_header[0]), sizeof(warp_header));
+			eth_pkt_send((void*) (packet + byte_offset), fragment_length, &(warp_header[0]), sizeof(warp_header));
 		}
 	}
 }

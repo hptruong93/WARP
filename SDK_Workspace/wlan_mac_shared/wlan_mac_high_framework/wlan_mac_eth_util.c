@@ -504,7 +504,6 @@ void wlan_poll_eth() {
 
 		dl_list_init(&tx_queue_list);
 		dl_node_insertEnd(&tx_queue_list, &(tx_queue->node));
-//		mpdu_start_ptr = (void*)((tx_packet_buffer*)(tx_queue->buf_ptr))->frame;
 
 		if (wlan_addr_eq(eth_start_ptr, warp_addr)) {
 			mpdu_tx_len = eth_rx_len - sizeof(ethernet_header);
@@ -534,47 +533,6 @@ void wlan_poll_eth() {
 
 	return;
 }
-
-//int wlan_data_frame_encap(u8* mpdu_start_ptr, u8* eth_dest, u8* eth_src, u16 eth_type , u32 eth_rx_len){
-//		llc_header* llc_hdr;
-//	u32 mpdu_tx_len;
-//
-//	//Calculate actual wireless Tx len (eth payload - eth header + wireless header)
-//	mpdu_tx_len = eth_rx_len - sizeof(ethernet_header) + sizeof(llc_header)
-//			+ sizeof(mac_header_80211);
-//
-//	//Helper pointers to interpret/fill fields in the new MPDU
-//	llc_hdr = (llc_header*) (mpdu_start_ptr + sizeof(mac_header_80211));
-//
-//	//Prepare the MPDU LLC header
-//	llc_hdr->dsap = LLC_SNAP;
-//	llc_hdr->ssap = LLC_SNAP;
-//	llc_hdr->control_field = LLC_CNTRL_UNNUMBERED;
-//	bzero((void *) (llc_hdr->org_code), 3); //Org Code 0x000000: Encapsulated Ethernet
-//
-//	switch (eth_encap_mode) {
-//	case ENCAP_MODE_AP:
-//		switch (eth_type) {
-//		case ETH_TYPE_ARP:
-//			llc_hdr->type = LLC_TYPE_ARP;
-//
-//			break;
-//		case ETH_TYPE_IP:
-//			llc_hdr->type = LLC_TYPE_IP;
-//			break;
-//		default:
-//			//Unknown/unsupported EtherType; don't process the Eth frame
-//			return 0;
-//			break;
-//		}
-//
-//		break;
-//	default:
-//		return 0;
-//		break;
-//	}
-//	return mpdu_tx_len;
-//}
 
 int wlan_eth_encap(u8* mpdu_start_ptr, u8* eth_dest, u8* eth_src, u8* eth_start_ptr, u32 eth_rx_len){
 //	u8* eth_mid_ptr;

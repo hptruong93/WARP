@@ -63,7 +63,7 @@ typedef struct{
 	u8 bssid[6];
 } transmit_element;
 
-void warp_protocol_initialize(void(*management_transmit_callback)(), void(*data_transmit_callback)(), void(*eth_send_callback)());
+void warp_protocol_initialize(void(*management_transmit_callback)(), void(*data_transmit_callback)(), u8* eth_send_dst);
 int warp_protocol_process(dl_list* checkout, u8* data, u16 tx_length);
 
 void setup_mac_address_control(u8* buffer, u8 operation, u8* mac_addr);

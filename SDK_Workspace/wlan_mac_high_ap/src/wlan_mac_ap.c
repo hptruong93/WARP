@@ -94,8 +94,7 @@ u32 		 mac_param_chan;
 static u8 eeprom_mac_addr[6];
 static u8 eth_mac_addr[6];
 static u8 bcast_addr[6]      = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-static u8 eth_dst[6]		= { 0x00, 0x0D, 0xB9, 0x34, 0x17, 0x29 };//The PC Engine ethernet MAC
-                                //{ 0x68, 0x5B, 0x35, 0x87, 0xFD, 0xD6 };//Idk what this is
+
 u32 ip_dest = 0x0202a8c0;
 u32 ip_src = 0x0102a8c0;
 
@@ -166,8 +165,6 @@ int main(){
     //wlan_mac_ltg_sched_set_callback(         (void*)ltg_event);
     wlan_mac_util_set_transmit_callback(	 (void*)warp_protocol_process);
 
-    warp_protocol_initialize((void*)send_management_to_wifi, (void*)send_data_to_wifi, (void*) eth_pkt_send);
-
     wlan_mac_util_set_eth_encap_mode(ENCAP_MODE_AP);
 
     // Initialize interrupts
@@ -183,6 +180,7 @@ int main(){
 	memcpy((void*) &(eth_mac_addr[0]), (void*) wlan_mac_high_get_eth_mac_addr(), 6);
 	memcpy((void*) &(eeprom_mac_addr[0]), (void*) wlan_mac_high_get_eeprom_mac_addr(), 6);
 	set_eth_mac_addr((void*) &(eth_mac_addr[0]));
+	warp_protocol_initialize((void*)send_management_to_wifi, (void*)send_data_to_wifi, eeprom_mac_addr);
 
     // Set Header information
 	tx_header_common.address_2 = &(eeprom_mac_addr[0]);
@@ -499,49 +497,12 @@ void print_packet(void* packet, u16 tx_length) {
 	xil_printf("\n");
 }
 
-int eth_pkt_send(void* data, u16 length, u8* warp_protocol_layer, u8 warp_protocol_layer_length) {
-	int status;
-	u32 eth_tx_len;
-	//u16 ipv4_pkt_len, udp_pkt_len;
-	u8* eth_tx_ptr;
-	dl_list checkout;
-	packet_bd* queue_entry;
-	ethernet_header* eth_hdr;
-	//ipv4_header* ip_hdr;
-	//udp_header* udp_hdr;
 
-	eth_tx_len = sizeof(ethernet_header) + length;
-	queue_checkout(&checkout, 1);
-
-	if (checkout.length == 1) {
-		queue_entry = (packet_bd*)(checkout.first);
-		eth_tx_ptr = (u8*)queue_entry->buf_ptr;
-
-		//ethernet header
-		eth_hdr = (ethernet_header*)eth_tx_ptr;
-		memcpy((void*) eth_hdr->address_destination, (void*)&eth_dst[0], 6);
-		memcpy((void*) eth_hdr->address_source, (void*)&eth_mac_addr[0], 6);
-		eth_hdr->type = 44552;//Magic??? It's 0x8ae
-
-		//copy warp_header;
-		memcpy((void*)(eth_tx_ptr + sizeof(ethernet_header)), (void*) (warp_protocol_layer), warp_protocol_layer_length);
-		//copy payload
-		memcpy((void*)(eth_tx_ptr + sizeof(ethernet_header) + warp_protocol_layer_length) , (void*) data, length);
-
-		//send and then free memory
-		status = wlan_eth_dma_send(eth_tx_ptr, eth_tx_len + warp_protocol_layer_length);
-		queue_checkin(&checkout);
-		if(status != 0) {xil_printf("Error in wlan_mac_send_eth! Err = %d\n", status); return -1;}
-	} else {
-		xil_printf("unable to allocate memory for eth");
-	}
-	return 0;
-}
 
 void mpdu_rx_process(void* pkt_buf_addr, u8 rate, u16 length) {
-	static unsigned int count = 0;
-	count = (count + 1) % 10000;
-//	xil_printf("Received from mac low %d\n", length);
+//	static unsigned int count = 0;
+//	count = (count + 1) % 10000;
+	xil_printf("Received from mac low %d\n", length);
 	//print_packet(pkt_buf_addr, length);
 
 	void * mpdu = pkt_buf_addr + PHY_RX_PKT_BUF_MPDU_OFFSET;
