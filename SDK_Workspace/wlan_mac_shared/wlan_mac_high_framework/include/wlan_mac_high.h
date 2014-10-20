@@ -113,6 +113,7 @@ typedef struct{
 typedef struct{
 	dl_node     node;
 	u8          addr[6];
+	u8          bssid[6];
 	u16         AID;
 	u32			flags; //TODO - Disable assoc check
 	rx_info     rx;

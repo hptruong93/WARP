@@ -12,6 +12,9 @@
 #include "wlan_mac_queue.h"
 #include "wlan_mac_misc_util.h"
 
+
+#define WARP_ETHERNET_TYPE                0xae08
+
 #define TYPE_INDEX                        0
 #define SUBTYPE_INDEX                     1
 
@@ -25,12 +28,9 @@
 
 //For type transmit
 #define TRANSMIT_HEADER_INDEX             HEADER_OFFSET
-#define TRANSMIT_HEADER_LENGTH            10 ////6 bytes bssid, 1 for flag, 1 for retry, 2 for length
-#define TRANSMIT_BSSID_INDEX              0
-#define TRANSMIT_FLAG_INDEX               6
-#define TRANSMIT_RETRY_INDEX              7
-#define TRANSMIT_PAYLOAD_SIZE_MSB_INDEX   8
-#define TRANSMIT_PAYLOAD_SIZE_LSB_INDEX   9
+#define TRANSMIT_HEADER_LENGTH            2 ////6 bytes bssid, 1 for flag, 1 for retry, 2 for length
+#define TRANSMIT_PAYLOAD_SIZE_MSB_INDEX   0
+#define TRANSMIT_PAYLOAD_SIZE_LSB_INDEX   1
 
 //For fragment info
 #define FRAGMENT_INFO_INDEX                           HEADER_OFFSET + TRANSMIT_HEADER_LENGTH
@@ -42,7 +42,18 @@
 #define FRAGMENT_BYTE_OFFSET_LSB_INDEX                4
 
 
-#define SUBTYPE_TRANSMISSION_CONTROL      1
+#define SUBTYPE_TRANSMISSION_CONTROL                   1
+#define SUBTYPE_TRANSMISSION_CONTROL_INDEX             HEADER_OFFSET
+#define TRANSMISSION_CONTROL_LENGTH                    13
+#define TRANSMISSION_ELEMENT_INDEX                     0
+#define TRANSMISSION_TOTAL_NUMBER_ELEMENT              1
+#define TRANSMISSION_BSSID_ADDRESS_INDEX               2
+#define TRANSMISSION_DISABLED_INDEX                    8
+#define TRANSMISSION_TX_POWER_INDEX                    9
+#define TRANSMISSION_CHANNEL_INDEX                     10
+#define TRANSMISSION_RATE_INDEX                        11
+#define TRANSMISSION_HW_MODE_INDEX                     12
+
 #define SUBTYPE_MAC_ADDRESS_CONTROL       2
 
 
@@ -55,11 +66,12 @@ typedef struct {
 } fragment_struct;
 
 typedef struct{
-	u8 flag;
-	u8 retry;
-	u16 length;
+//	u8 flag;
+//	u8 retry;
+//	u16 length;
 	u8 dst_mac[6];
 	u8 src_mac[6];
+	u16 type;
 	u8 bssid[6];
 } transmit_element;
 

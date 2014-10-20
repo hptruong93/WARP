@@ -15,6 +15,5 @@
 
 void interpret_transmit_element(u8* packet, transmit_element* transmit_info);
 void clear_transmit_element(transmit_element* element);
-u8 verify_transmit_element(transmit_element* transmit_element);
 
 #endif /* TRANSMIT_HEADER_H_ */

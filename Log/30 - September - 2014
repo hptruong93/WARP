@@ -205,3 +205,93 @@ WARP has MAC of "40:d8:55:04:22:84". This is slightly different from the MAC wri
 
 
 
+--------Start Entry--------------
+Date: 23 - July - 2014
+***Title: Resolved problem with ethernet frame padding
+
+***Log Content: 
+Ethernet frame has a minimum payload of 46 bytes. Therefore any management frame forwarded from hostapd to WARP with length less than 46 bytes (including the warp header) would be padded with 0s at the end to fill up 46 bytes.
+This causes the station to misinterpret the packet sent out from warp (since warp sent out the air the whole ethernet payload with 0s padding at the end) and most likely drop the packet.
+
+Quick fix is to add 16 bits integer at the end of transmit header in warp layer to notify warp how many bytes the payload actually is. Current structure of WARP transmit element would be [power] [rate] [channel] [flag] [retry] [payload_size 8 MSB] [payload_size 8 LSB]
+WARP simply interprets the header and reads the required amount of bytes.
+
+
+--------End Entry--------------
+
+
+
+
+--------Start Entry--------------
+Date: 24 - July - 2014
+***Title: Changed PC Engine program to libtins
+
+***Log Content: 
+Changed PC Engine program from scapy to libtins: --> See http://libtins.github.io/
+	This probably improves processing speed of the PC Engine significantly
+	Note that github installation guide only works with x64 system (cannot make x86 ubuntu to compile custom protocol so we cannot use x86 system)
+	
+	Fully implemented PC Engine program in libtins to work with WARP
+
+
+--------End Entry--------------
+
+
+
+
+--------Start Entry--------------
+Date: 24 - July - 2014
+***Title: Problem with TX MPDU flag
+
+***Log Content: 
+TX MPDU flag would cause communication between hostapd and station to be delayed and authentication not successful. Haven't resolved yet so currently having flag = 0
+
+
+--------End Entry--------------
+
+
+
+
+--------Start Entry--------------
+Date: 15 - August - 2014
+***Title: Big updates
+
+***Log Content: 
+- Progress:
++ Resolved flag problem: use different flag for each packet as implemented in the reference design.
++ See WARP protocol for the latest WARP protocol version.
++ WARP can now host multiple bssid and integrate with a simple aurora slice
+
+- Problems:
++ Certain Ethernet frames from eth0 of aurora-agent cannot be forward directly to WARP since Ethernet frame payload has maximum size of 1500.
+    --> Solution is to fragment the ethernet frame from the aurora-agent side and reassemble it in WARP
+    --> The solution above must also be implemented in the libtins program so that when WARP receive frame of size greater than 1500, it can fragment the frame and forward to hwsim interface
++ WARP cannot be functional for a long period of time (say more than 2 - 3 hours). This may be a problem with us not managing the queue well??? (checking in an element twice creating a circular linked list)
+
+
+--------End Entry--------------
+
+
+
+
+--------Start Entry--------------
+Date: 30 - September - 2014
+***Title: Measurement using iperf
+
+***Log Content: 
+Measurement of WARP AP throughput using iperf
+
+Left column is mtu length. Right column is speed (in Kbps)
+default: (~1500) 316
+536 --> 191
+800 --> 300
+1000 --> 358
+1300 --> 371
+1500 --> 311
+
+
+--------End Entry--------------
+
+
+
+

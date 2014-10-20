@@ -55,7 +55,6 @@ void print_mac(u8* address) {
 
 u8 read_transmit_header(u8* packet, u16* length) {
 	interpret_transmit_element(packet + HEADER_OFFSET, &transmit_info);
-	*length = HEADER_OFFSET + TRANSMIT_HEADER_LENGTH + transmit_info.length;
 	return TRANSMIT_HEADER_LENGTH;
 }
 
@@ -97,103 +96,65 @@ int warp_protocol_process(dl_list* checkout, u8* packet, u16 tx_length) {
 #endif
 
 	clear_transmit_element(&transmit_info);
-	u16 shift_amount = 0;
+	ethernet_header* ether_header = (ethernet_header*) packet;
+	u8* warp_header = packet + sizeof(ethernet_header);
 
-	switch (packet[TYPE_INDEX]) {
-	case TYPE_TRANSMIT:
+	if (ether_header->type == WARP_ETHERNET_TYPE) {
+		switch (warp_header[TYPE_INDEX]) {
+		case TYPE_TRANSMIT:
 #ifdef WARP_PROTOCOL_DEBUG
-		xil_printf("Transmit\n");
+			xil_printf("Transmit\n");
 #endif
-		;
+			;
+			memcpy(transmit_info.src_mac, ether_header->address_source, 6);
+			memcpy(transmit_info .dst_mac, ether_header->address_destination, 6);
+			transmit_info.type = ether_header->type;
 
-		u32 ethernet_discrepancy = packet - ((tx_packet_buffer*)(tx_queue->buf_ptr))->frame;
-		shift_amount = HEADER_OFFSET + read_transmit_header(packet, &tx_length);
+			void* mpdu_start_ptr = (void*)((tx_packet_buffer*)(tx_queue->buf_ptr))->frame;
+			tx_length -= HEADER_OFFSET + TRANSMIT_HEADER_LENGTH;
+			memmove(mpdu_start_ptr, warp_header + HEADER_OFFSET + TRANSMIT_HEADER_LENGTH, tx_length);
 
-		fragment_receive_result* receive_result = (fragment_receive_result*) wlan_mac_high_calloc(sizeof(fragment_receive_result));
-		fragment_receive(tx_queue, tx_length - shift_amount, ethernet_discrepancy + shift_amount, receive_result);
-		shift_amount += FRAGMENT_INFO_LENGTH;
-
-//		xil_printf("Status is %d\n", receive_result->status);
-		if (receive_result->status == RECEIVER_READY_TO_SEND) {
-			packet_bd* current = receive_result->packet_address;
-			u8* data_buffer = ((tx_packet_buffer*)(current->buf_ptr))->frame;
-			tx_length = receive_result->info_address->length;
-
-			//Create queue
-			dl_list new_queue;
-			queue_checkout(&new_queue, 0);
-			dl_node_insertBeginning(&new_queue, (dl_node*)current); //See wlan_mac_queue.h for the (dl_node*) cast
-
-			free_fragment_receive_result(receive_result);
-			if (packet[SUBTYPE_INDEX] == SUBTYPE_MANAGEMENT_TRANSMIT) {
-				memmove((void*) data_buffer, (void*) (data_buffer + ethernet_discrepancy + shift_amount), tx_length);
-				warp_protocol_management_transmit_callback(&new_queue, current, tx_length, &transmit_info);
-				return 0;
-			} else if (packet[SUBTYPE_INDEX] == SUBTYPE_DATA_TRANSMIT) {
-//				xil_printf("Before -----------------------------------------------------\n");
-//				print_packett(data_buffer, tx_length + ethernet_discrepancy);
-				u32 new_tx_length = wlan_eth_encap(data_buffer, transmit_info.dst_mac, transmit_info.src_mac, data_buffer + ethernet_discrepancy + shift_amount , tx_length);
-
-//				if (transmit_info.dst_mac[5] == 0x8c) {
-//					xil_printf("After -----------------------------------------------------\n");
-//					print_packett(data_buffer, tx_length + ethernet_discrepancy);
-//				}
-
-				if (new_tx_length > 0) {
-					memmove((void*) (data_buffer + ethernet_discrepancy), (void*) (data_buffer + ethernet_discrepancy + shift_amount + 14), tx_length - 14);
-//					if (transmit_info.dst_mac[5] == 0x8c) {
-//						print_packett(data_buffer, new_tx_length);
-//						xil_printf("End -----------------------------------------------------\n\n");
-//					}
-
-					//Create queue
-					dl_list new_queue;
-					queue_checkout(&new_queue, 0);
-					dl_node_insertBeginning(&new_queue, (dl_node*)current); //See wlan_mac_queue.h for the (dl_node*) cast
-
-					warp_protocol_data_transmit_callback(&new_queue, current, new_tx_length, &transmit_info);
-					return 0;
-				} else {
-					xil_printf("Cannot insert data header...\n");
-					queue_checkin_packet_bd(current);
-				}
+			warp_protocol_management_transmit_callback(checkout, tx_length, &transmit_info);
+			return 0;
+		break;
+		case TYPE_CONTROL:
+			switch (warp_header[SUBTYPE_INDEX]) {
+			case SUBTYPE_TRANSMISSION_CONTROL:
+#ifdef WARP_PROTOCOL_DEBUG
+				xil_printf("Transmission control\n");
+				xil_printf("Transmission subtype supported yet!\n");
+#endif
+				read_transmission_control_header(warp_header, &tx_length);
+			break;
+			case SUBTYPE_MAC_ADDRESS_CONTROL:
+#ifdef WARP_PROTOCOL_DEBUG
+				xil_printf("MAC address control\n");
+#endif
+				read_mac_control_header(warp_header, &tx_length);
+			break;
+			default:
+#ifdef WARP_PROTOCOL_DEBUG
+				xil_printf("Subtype not supported yet.\n");
+#endif
+			break;
 			}
-
-			//print_packett(((tx_packet_buffer*)(tx_queue->buf_ptr))->frame + ethernet_discrepancy + shift_amount, tx_length);
-		} else {
-			free_fragment_receive_result(receive_result);
-		}
-
 		break;
-	case TYPE_CONTROL:
-		switch (packet[SUBTYPE_INDEX]) {
-		case SUBTYPE_TRANSMISSION_CONTROL:
-#ifdef WARP_PROTOCOL_DEBUG
-			xil_printf("Transmission control\n");
-			xil_printf("Transmission subtype supported yet!\n");
-#endif
-			shift_amount = read_transmission_control_header(packet, &tx_length);
-			break;
-		case SUBTYPE_MAC_ADDRESS_CONTROL:
-#ifdef WARP_PROTOCOL_DEBUG
-			xil_printf("MAC address control\n");
-#endif
-			shift_amount = read_mac_control_header(packet, &tx_length);
-			break;
-		default:
-#ifdef WARP_PROTOCOL_DEBUG
-			xil_printf("Subtype not supported yet.\n");
-#endif
-			break;
-		}
-		break;
-	default: //Do nothing
+		default: //Do nothing
 #ifdef WARP_PROTOCOL_DEBUG
 			xil_printf("Type not supported yet.\n");
 #endif
 		break;
+		}
+	} else {
+		memcpy(transmit_info.src_mac, ether_header->address_source, 6);
+		memcpy(transmit_info.dst_mac, ether_header->address_destination, 6);
+		transmit_info.type = ether_header->type;
+
+		tx_length = wlan_eth_encap((void*) ((tx_packet_buffer*) (tx_queue->buf_ptr))->frame, ether_header->address_destination, ether_header->address_source, packet, tx_length + sizeof(ethernet_header));
+		warp_protocol_management_transmit_callback(checkout, tx_length, &transmit_info);
+		return 0;
 	}
 
-	//queue_checkin(checkout);
+	queue_checkin(checkout);
 	return 0; //Success
 }
