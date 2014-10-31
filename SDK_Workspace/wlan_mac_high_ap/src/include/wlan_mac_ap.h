@@ -122,6 +122,10 @@
 #define LTG_ID_GRP_PYLD_FIXED	  1
 #define LTG_ID_GRP_PYLD_RANDOM	  2
 
+/*************************** Global variables ********************************/
+extern dl_list association_table;
+extern dl_list statistics_table;
+
 /*************************** Function Prototypes *****************************/
 
 
@@ -130,7 +134,6 @@ int  main();
 void ltg_event(u32 id, void* callback_arg);
 
 int  ethernet_receive(dl_list* tx_queue_list, u8* eth_dest, u8* eth_src, u16 tx_length);
-int eth_pkt_send(void* data, u16 length, u8* warp_protocol_layer, u8 warp_protocol_layer_length);
 void ipv4_checksum(ipv4_header* ip_hdr);
 void udp_checksum(ipv4_header* ip_hdr);
 void mpdu_rx_process(void* pkt_buf_addr, u8 rate, u16 length);
@@ -142,10 +145,13 @@ void check_tx_queue();
 
 void beacon_transmit();
 //void eth_pkt_transmit(dl_list* checkout, u16 tx_length);
-void send_management_to_wifi(dl_list* checkout, u16 tx_length, transmit_element* transmit_info);
+void send_frame_to_wifi(dl_list* checkout, u16 tx_length, transmit_element* transmit_info);
 void send_data_to_wifi(dl_list* checkout, packet_bd*	tx_queue, u16 tx_length, transmit_element* transmit_info);
-void send_test_packet();
-void send_test_packet_2();
+void send_test_packet_6();
+void send_test_packet_7();
+void send_test_packet_8();
+void send_test_packet_9();
+void send_test_packet_0();
 
 u32  get_associations_status();
 void enable_associations();

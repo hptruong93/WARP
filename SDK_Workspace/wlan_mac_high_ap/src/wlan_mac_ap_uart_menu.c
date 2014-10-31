@@ -116,13 +116,23 @@ void uart_rx(u8 rxByte){
 				break;
 
 				case ASCII_6:
-					curr_char = 0;
-					send_test_packet();
+					send_test_packet_6();
 				break;
 
 				case ASCII_7:
-					curr_char = 0;
-					send_test_packet_2();
+					send_test_packet_7();
+				break;
+
+				case ASCII_8:
+					send_test_packet_8();
+				break;
+
+				case ASCII_9:
+					send_test_packet_9();
+				break;
+
+				case ASCII_0:
+					send_test_packet_0();
 				break;
 
 				case ASCII_e:

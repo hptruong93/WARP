@@ -42,7 +42,6 @@
 #include "wlan_mac_schedule.h"
 #include "wlan_mac_dl_list.h"
 #include "warp_protocol.h"
-#include "fragment_sender.h"
 
 // WLAN Exp includes
 #include "wlan_exp_common.h"
@@ -180,7 +179,7 @@ int main(){
 	memcpy((void*) &(eth_mac_addr[0]), (void*) wlan_mac_high_get_eth_mac_addr(), 6);
 	memcpy((void*) &(eeprom_mac_addr[0]), (void*) wlan_mac_high_get_eeprom_mac_addr(), 6);
 	set_eth_mac_addr((void*) &(eth_mac_addr[0]));
-	warp_protocol_initialize((void*)send_management_to_wifi, (void*)send_data_to_wifi, eeprom_mac_addr);
+	warp_protocol_initialize((void*)send_frame_to_wifi, eeprom_mac_addr);
 
     // Set Header information
 	tx_header_common.address_2 = &(eeprom_mac_addr[0]);
@@ -416,7 +415,7 @@ int ethernet_receive(dl_list* tx_queue_list, u8* eth_dest, u8* eth_src, u16 tx_l
 
 }
 
-void send_management_to_wifi(dl_list* checkout, u16 tx_length, transmit_element* transmit_info) {
+void send_frame_to_wifi(dl_list* checkout, u16 tx_length, transmit_element* transmit_info) {
 	u16 type = transmit_info->type;
 	u8* eth_dest = transmit_info->dst_mac;
 	u8* eth_src = transmit_info->src_mac;
@@ -436,7 +435,7 @@ void send_management_to_wifi(dl_list* checkout, u16 tx_length, transmit_element*
 
 			wlan_create_data_frame((void*) ((tx_packet_buffer*) (tx_queue->buf_ptr))->frame, &tx_header_common, MAC_FRAME_CTRL2_FLAG_FROM_DS);
 
-			if (wlan_addr_eq(bcast_addr, eth_dest)) {
+			if (wlan_addr_eq(bcast_addr, eth_dest)) {//This needs to cover for the other ap as well?
 				if (queue_num_queued(0) < max_queue_size) {
 					wlan_mac_high_setup_tx_queue(tx_queue, NULL, tx_length, 0, default_tx_gain_target, 0);
 
@@ -477,7 +476,7 @@ void send_management_to_wifi(dl_list* checkout, u16 tx_length, transmit_element*
 	}
 }
 
-void send_data_to_wifi(dl_list* checkout, packet_bd*	tx_queue, u16 tx_length, transmit_element* transmit_info) {
+//void send_data_to_wifi(dl_list* checkout, packet_bd*	tx_queue, u16 tx_length, transmit_element* transmit_info) {
 //	if (queue_num_queued(0) < max_queue_size) {
 //		wlan_mac_high_setup_tx_header( &tx_header_common, (u8*)(&(transmit_info->dst_mac[0])), (u8*)(&(transmit_info->bssid[0])), (u8*)(&(transmit_info->src_mac[0])) );
 //		wlan_create_data_frame((void*)((tx_packet_buffer*)(tx_queue->buf_ptr))->frame, &tx_header_common, MAC_FRAME_CTRL2_FLAG_FROM_DS);
@@ -492,7 +491,7 @@ void send_data_to_wifi(dl_list* checkout, packet_bd*	tx_queue, u16 tx_length, tr
 //		queue_checkin(checkout);
 //		memory_issue_cnt += 1;
 //	}
-}
+//}
 
 void print_packet(void* packet, u16 tx_length) {
 	u16 i = 0;
@@ -523,7 +522,7 @@ void mpdu_rx_process(void* pkt_buf_addr, u8 rate, u16 length) {
 
 //	xil_printf("Length is %d\n", length);
 
-	void* rx_event_log_entry;
+//	void* rx_event_log_entry;
 
 	rx_frame_info* mpdu_info = (rx_frame_info*)pkt_buf_addr;
 
@@ -1073,19 +1072,45 @@ void reset_stats() {
 	wlan_tx = 0;
 }
 
-void send_test_packet() {
-	xil_printf("Sending test packets...\n");
-	u8 warp_layer[] = {0x01, 0x00, 0x00, 0x01, 0x01, 0x02, 0x00, 0x00, 0x00};
-	u8 data[] = {0x09, 0x09, 0x09, 0x09, 0x09};
+void send_test_packet_6() {
+//	xil_printf("Adding bssid 0x40, 0xd8, 0x055, 0x04, 0x22, 0x84");
+//	static u8 warp_data[] = {0x02, 0x01, 0x01, 0x40, 0xd8, 0x55, 0x04, 0x22, 0x84};
+//	read_mac_control_header(warp_data, NULL);
 
-	u16 i;
-	for (i = 0; i < 1; i++) {
-		eth_pkt_send(data, 5, warp_layer, 9);
-	}
+	xil_printf("Adding bssid 0x40, 0xd8, 0x055, 0x04, 0x22, 0x86\n");
+	static u8 warp_data1[] = {0x02, 0x04, 0x01, 0x40, 0xd8, 0x55, 0x04, 0x22, 0x86};
+	u16 warp_length = sizeof(warp_data1);
+	read_mac_control_header(warp_data1, &warp_length);
 }
 
-void send_test_packet_2() {
-	u8 test_message[7] = {32, 0x00, 0x21, 0x5d, 0x22, 0x97, 0x8c};
-	wlan_mac_high_mac_manage_control(test_message);
+void send_test_packet_7() {
+	xil_printf("Associating station 0x00, 0x21, 0x5d, 0x22, 0x97, 0x8c to slice 0\n");
+	//                              1 station              BSSID                   ASSOCIATE              Station mac
+	u8 warp_data[] = {0x02, 12,      1,     0x40, 0xd8, 0x55, 0x04, 0x22, 0x84,    1,       0x00, 0x21, 0x5d, 0x22, 0x97, 0x8c};
+	read_bssid_control_header(warp_data, NULL);
+}
+
+void send_test_packet_8() {
+	xil_printf("Associating station 0x00, 0x21, 0x5d, 0x22, 0x97, 0x8c to slice 1\n");
+	//                              1 station              BSSID                   ASSOCIATE              Station mac
+	u8 warp_data[] = {0x02, 12,      1,     0x40, 0xd8, 0x55, 0x04, 0x22, 0x86,    1,       0x00, 0x21, 0x5d, 0x22, 0x97, 0x8c};
+	read_bssid_control_header(warp_data, NULL);
+}
+
+void send_test_packet_9() {
+	xil_printf("Disassociating station 0x00, 0x21, 0x5d, 0x22, 0x97, 0x8c\n");
+	//                              1 station              BSSID                   DISASSOCIATE              Station mac
+	u8 warp_data[] = {0x02, 12,      1,     0x40, 0xd8, 0x55, 0x04, 0x22, 0x84,    32,       0x00, 0x21, 0x5d, 0x22, 0x97, 0x8c};
+	xil_printf("Address main is %x\n", &association_table);
+	read_bssid_control_header(warp_data, NULL);
+//	u8 mac[] = {0x00, 0x21, 0x5d, 0x22, 0x97, 0x8c};
+//	remove_association(&association_table, &statistics_table, mac);
+}
+
+void send_test_packet_0() {
+	xil_printf("Disassociating station 0x00, 0x21, 0x5d, 0x22, 0x97, 0x8c\n");
+	//                              1 station              BSSID                   DISASSOCIATE              Station mac
+	u8 warp_data[] = {0x02, 12,      1,     0x40, 0xd8, 0x55, 0x04, 0x22, 0x86,    32,       0x00, 0x21, 0x5d, 0x22, 0x97, 0x8c};
+	read_bssid_control_header(warp_data, NULL);
 }
 #endif

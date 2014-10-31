@@ -11,12 +11,13 @@
 #include "xil_types.h"
 
 #define MAC_ADD           		1
-#define MAC_ADDED         		2
+#define MAC_ADDED         		1
 #define MAC_LIST_FULL     		3
 
 #define MAC_REMOVE        		32
+#define MAC_REMOVED       		32
 #define MAC_REMOVE_ALL			33
-#define MAC_REMOVED       		34
+#define MAC_REMOVED_ALL         33
 
 #define MAC_CHECK_IF_EXIST 	 	64
 #define MAC_EXISTED        		65
