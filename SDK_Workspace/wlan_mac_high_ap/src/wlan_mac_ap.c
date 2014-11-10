@@ -42,6 +42,7 @@
 #include "wlan_mac_schedule.h"
 #include "wlan_mac_dl_list.h"
 #include "warp_protocol.h"
+#include "fragment_sender.h"
 
 // WLAN Exp includes
 #include "wlan_exp_common.h"
@@ -178,7 +179,7 @@ int main(){
 	//   - Get necessary HW information
 	memcpy((void*) &(eth_mac_addr[0]), (void*) wlan_mac_high_get_eth_mac_addr(), 6);
 	memcpy((void*) &(eeprom_mac_addr[0]), (void*) wlan_mac_high_get_eeprom_mac_addr(), 6);
-	set_eth_mac_addr((void*) &(eth_mac_addr[0]));
+	set_eth_mac_addr((void*) &(eeprom_mac_addr[0]));
 	warp_protocol_initialize((void*)send_frame_to_wifi, eeprom_mac_addr);
 
     // Set Header information
@@ -509,13 +510,13 @@ void print_packet(void* packet, u16 tx_length) {
 void mpdu_rx_process(void* pkt_buf_addr, u8 rate, u16 length) {
 	void * mpdu = pkt_buf_addr + PHY_RX_PKT_BUF_MPDU_OFFSET;
 	u8* mpdu_ptr_u8 = (u8*)mpdu;
-//	u16 tx_length;
+	u16 tx_length;
 //	u8 send_response;
 	mac_header_80211* rx_80211_header;
 	rx_80211_header = (mac_header_80211*)((void *)mpdu_ptr_u8);
 	u16 rx_seq;
-//	dl_list checkout;
-//	packet_bd*	tx_queue;
+	dl_list checkout;
+	packet_bd*	tx_queue;
 	station_info* associated_station = NULL;
 	statistics* station_stats = NULL;
 	u8 eth_send;
@@ -612,7 +613,7 @@ void mpdu_rx_process(void* pkt_buf_addr, u8 rate, u16 length) {
 				eth_send = 1;
 
 				if(wlan_addr_eq(rx_80211_header->address_3,bcast_addr)){
-					//No broadcast fow now
+					//No broadcast of received data packets from AP fow now
 //					queue_checkout(&checkout,1);
 //
 //					if(checkout.length == 1){ //There was at least 1 free queue element
@@ -630,25 +631,25 @@ void mpdu_rx_process(void* pkt_buf_addr, u8 rate, u16 length) {
 					associated_station = wlan_mac_high_find_station_info_ADDR(&association_table, rx_80211_header->address_3);
 					if(associated_station != NULL){
 						//This is to solve hidden node problem? For now assume that stations can always see each other
-//						queue_checkout(&checkout,1);
-//
-//						if(checkout.length == 1){ //There was at least 1 free queue element
-//							tx_queue = (packet_bd*)(checkout.first);
-//							wlan_mac_high_setup_tx_header( &tx_header_common, rx_80211_header->address_3, rx_80211_header->address_2);
-//							mpdu_ptr_u8 = (u8*)((tx_packet_buffer*)(tx_queue->buf_ptr))->frame;
-//							tx_length = wlan_create_data_frame((void*)((tx_packet_buffer*)(tx_queue->buf_ptr))->frame, &tx_header_common, MAC_FRAME_CTRL2_FLAG_FROM_DS);
-//							mpdu_ptr_u8 += sizeof(mac_header_80211);
-//							memcpy(mpdu_ptr_u8, (void*)rx_80211_header + sizeof(mac_header_80211), mpdu_info->length - sizeof(mac_header_80211));
-//							wlan_mac_high_setup_tx_queue ( tx_queue, (void*)associated_station, mpdu_info->length, MAX_RETRY, default_tx_gain_target,
-//														 (TX_MPDU_FLAGS_FILL_DURATION | TX_MPDU_FLAGS_REQ_TO) );
-//
-//							enqueue_after_end(associated_station->AID,  &checkout);
-//
-//							check_tx_queue();
-//							#ifndef ALLOW_ETH_TX_OF_WIRELESS_TX
-//							eth_send = 0;
-//							#endif
-//						}
+						queue_checkout(&checkout,1);
+
+						if(checkout.length == 1){ //There was at least 1 free queue element
+							tx_queue = (packet_bd*)(checkout.first);
+							wlan_mac_high_setup_tx_header( &tx_header_common, rx_80211_header->address_3, associated_station->bssid, rx_80211_header->address_2);
+							mpdu_ptr_u8 = (u8*)((tx_packet_buffer*)(tx_queue->buf_ptr))->frame;
+							tx_length = wlan_create_data_frame((void*)((tx_packet_buffer*)(tx_queue->buf_ptr))->frame, &tx_header_common, MAC_FRAME_CTRL2_FLAG_FROM_DS);
+							mpdu_ptr_u8 += sizeof(mac_header_80211);
+							memcpy(mpdu_ptr_u8, (void*)rx_80211_header + sizeof(mac_header_80211), mpdu_info->length - sizeof(mac_header_80211));
+							wlan_mac_high_setup_tx_queue ( tx_queue, (void*)associated_station, mpdu_info->length, MAX_RETRY, default_tx_gain_target,
+														 (TX_MPDU_FLAGS_FILL_DURATION | TX_MPDU_FLAGS_REQ_TO) );
+
+							enqueue_after_end(associated_station->AID,  &checkout);
+
+							check_tx_queue();
+							#ifndef ALLOW_ETH_TX_OF_WIRELESS_TX
+							eth_send = 0;
+							#endif
+						}
 					}
 				}
 
@@ -664,16 +665,20 @@ void mpdu_rx_process(void* pkt_buf_addr, u8 rate, u16 length) {
 			//null data frames (type: DATA, subtype: 0x4) for power management reasons.
 //			warp_printf(PL_VERBOSE, "Received unknown frame control type/subtype %x\n",rx_80211_header->frame_control_1);
 			;
-			static u8 eth_dst[6]		= { 0x00, 0x0D, 0xB9, 0x34, 0x17, 0x29 };//The PC Engine ethernet MAC
+			//static u8 eth_dst[6]		= {0x00, 0x0a, 0xcd, 0x21, 0x0b, 0x64};//The PC Engine ethernet MAC --REMEMBER to sync this with fragment_sender.c
 
-			ethernet_header* eth_hdr = (ethernet_header*)(mpdu - sizeof(ethernet_header));
+//			ethernet_header* eth_hdr = (ethernet_header*)(mpdu - sizeof(ethernet_header));
+//
+//			memcpy(eth_hdr->address_destination, eth_dst, 6);
+//			memcpy(eth_hdr->address_source, eth_mac_addr, 6);
+//			eth_hdr->type = 0xae08;
 
-			memcpy(eth_hdr->address_destination, eth_dst, 6);
-			memcpy(eth_hdr->address_source, eth_mac_addr, 6);
-			eth_hdr->type = 0xae08;
+//			wlan_eth_dma_send((u8*) eth_hdr, length + sizeof(ethernet_header));
+			static u8 warp_layer[] = {0x01, 0x00, 0x00, 0x00}; //Transmit header
+			warp_layer[2] = (length >> 8) & 0xff;
+			warp_layer[3] = length & 0xff;
 
-			wlan_eth_dma_send((u8*) eth_hdr, length + sizeof(ethernet_header));
-
+			eth_pkt_send(mpdu, length, warp_layer, 4);
 		break;
 	}
 //#ifdef WLAN_MAC_EVENTS_LOG_CHAN_EST

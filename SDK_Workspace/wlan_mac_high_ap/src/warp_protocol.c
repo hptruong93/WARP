@@ -70,7 +70,10 @@ u8 read_transmit_header(u8* warp_header, u16* length) {
 
 u8 read_transmission_control_header(u8* warp_header, u16* length) {
 	u8* transmission_control_data = warp_header + TRANSMIT_HEADER_LENGTH;
+	xil_printf("Processing this ...\n");
+	print_packett(transmission_control_data, 16);
 	u8 total_number_element = transmission_control_data[TRANSMISSION_TOTAL_NUMBER_ELEMENT];
+	u8 operation_code = transmission_control_data[TRANSMISSION_OPERATION_CODE_INDEX];
 	u8* current_bssid = transmission_control_data + TRANSMISSION_BSSID_ADDRESS_INDEX;
 	u8 i = 0;
 
@@ -87,14 +90,17 @@ u8 read_transmission_control_header(u8* warp_header, u16* length) {
 		xil_printf("Disabled: %d, tx_power: %d, channel: %d, rate: %d, hw_mode: %d\n", disabled, tx_power, channel, rate, hw_mode);
 
 		//Configure radio here
+
 		//Finished configuring radio
 
-		static u8 reply[TRANSMIT_HEADER_LENGTH + TRANSMISSION_CONTROL_LENGTH];
+		static u8 reply[HEADER_LENGTH + TRANSMISSION_CONTROL_LENGTH];
 		reply[TYPE_INDEX] = TYPE_CONTROL;
 		reply[SUBTYPE_INDEX] = SUBTYPE_TRANSMISSION_CONTROL;
 
-		u8* reply_data = reply + TRANSMISSION_CONTROL_LENGTH;
+		u8* reply_data = reply + SUBTYPE_TRANSMISSION_CONTROL_INDEX;
 		reply_data[TRANSMISSION_TOTAL_NUMBER_ELEMENT] = 1;
+		reply_data++;
+		reply_data[0] = 8;//operation_code //Successful is 8, for now
 		reply_data++;
 		memcpy(reply_data, bssid, 6);
 		reply_data[TRANSMISSION_DISABLED_INDEX] = disabled;
@@ -103,7 +109,7 @@ u8 read_transmission_control_header(u8* warp_header, u16* length) {
 		reply_data[TRANSMISSION_RATE_INDEX] = rate;
 		reply_data[TRANSMISSION_HW_MODE_INDEX] = hw_mode;
 
-		xil_printf("Sending reply to request...");
+		xil_printf("Sending reply to request...\n");
 		eth_pkt_send(reply, TRANSMIT_HEADER_LENGTH + TRANSMISSION_CONTROL_LENGTH, NULL, 0);
 
 		current_bssid += TRANSMISSION_CONTROL_LENGTH - 1; //1 is the total number in the front

@@ -40,6 +40,7 @@
 #include "wlan_mac_schedule.h"
 #include "malloc.h"
 #include "wlan_mac_ap.h"
+#include "fragment_sender.h"
 
 #include "wlan_exp_common.h"
 #include "wlan_exp_node.h"
@@ -1198,7 +1199,7 @@ void wlan_mac_high_mac_manage_reply(u8* mac_control) {
 	for (i = 0; i < 7; i++) {
 		xil_printf("%02x-", mac_control[i]);
 	}
-	static u8 warp_header[7] = { 2, 2 };
+	static u8 warp_header[7] = { 2, 4 };
 	eth_pkt_send((void*) mac_control, 7, warp_header, 2);
 }
 

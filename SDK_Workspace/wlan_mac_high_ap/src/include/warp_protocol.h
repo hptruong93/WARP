@@ -15,6 +15,7 @@
 
 #define WARP_ETHERNET_TYPE                0xae08
 
+#define HEADER_LENGTH                     2
 #define TYPE_INDEX                        0
 #define SUBTYPE_INDEX                     1
 
@@ -25,13 +26,13 @@
 #define SUBTYPE_DATA_TRANSMIT			  1
 
 //For type transmit
-#define TRANSMIT_HEADER_INDEX                          HEADER_OFFSET
+#define TRANSMIT_HEADER_INDEX                          HEADER_LENGTH
 #define TRANSMIT_HEADER_LENGTH                         2 ////6 bytes bssid, 1 for flag, 1 for retry, 2 for length
 #define TRANSMIT_PAYLOAD_SIZE_MSB_INDEX                0
 #define TRANSMIT_PAYLOAD_SIZE_LSB_INDEX                1
 
 //For fragment info
-#define FRAGMENT_INFO_INDEX                            HEADER_OFFSET + TRANSMIT_HEADER_LENGTH
+#define FRAGMENT_INFO_INDEX                            HEADER_LENGTH + TRANSMIT_HEADER_LENGTH
 #define FRAGMENT_INFO_LENGTH                           5
 #define FRAGMENT_ID_INDEX                              0
 #define FRAGMENT_NUMBER_INDEX                          1
@@ -42,15 +43,27 @@
 #define SUBTYPE_MAC_ADDRESS_DATABASE_MANAGEMENT        4
 
 #define SUBTYPE_TRANSMISSION_CONTROL                   8
-#define SUBTYPE_TRANSMISSION_CONTROL_INDEX             HEADER_OFFSET
+#define SUBTYPE_TRANSMISSION_CONTROL_INDEX             HEADER_LENGTH
 #define TRANSMISSION_CONTROL_LENGTH                    12
 #define TRANSMISSION_TOTAL_NUMBER_ELEMENT              0
-#define TRANSMISSION_BSSID_ADDRESS_INDEX               1
+#define TRANSMISSION_OPERATION_CODE_INDEX              1
+#define TRANSMISSION_BSSID_ADDRESS_INDEX               2
 #define TRANSMISSION_DISABLED_INDEX                    6 //Relative to the bssid
 #define TRANSMISSION_TX_POWER_INDEX                    7 //Relative to the bssid
 #define TRANSMISSION_CHANNEL_INDEX                     8 //Relative to the bssid
 #define TRANSMISSION_RATE_INDEX                        9 //Relative to the bssid
 #define TRANSMISSION_HW_MODE_INDEX                     10 //Relative to the bssid
+#define TRANSMISSION_HW_MODE_A_BIT_INDEX               3
+#define TRANSMISSION_HW_MODE_B_BIT_INDEX               2
+#define TRANSMISSION_HW_MODE_G_BIT_INDEX               1
+#define TRANSMISSION_HW_MODE_N_BIT_INDEX               0
+
+#define TRANSMISSION_OPERATION_CONFIGURE               1
+#define TRANSMISSION_OPERATION_VERIFY                  4
+#define TRANSMISSION_OPERATION_VERIFIED                4
+#define TRANSMISSION_OPERATION_INCONSISTENT            6
+#define TRANSMISSION_OPERATION_CONFIGURE_SUCCESSFUL    8
+#define TRANSMISSION_OPERATION_CONFIGURE_FAILED        16
 
 
 #define SUBTYPE_BSSID_CONTROL                          12
@@ -81,10 +94,7 @@ typedef struct {
 	u32 length;
 } fragment_struct;
 
-typedef struct{
-//	u8 flag;
-//	u8 retry;
-//	u16 length;
+typedef struct {
 	u8 dst_mac[6];
 	u8 src_mac[6];
 	u16 type;
