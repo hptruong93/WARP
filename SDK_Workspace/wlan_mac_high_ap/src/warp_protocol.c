@@ -19,8 +19,6 @@
 #include "wlan_mac_ap.h"
 
 #include "transmit_element.h"
-#include "mac_address_control.h"
-#include "transmission_control.h"
 
 //#define WARP_PROTOCOL_DEBUG
 
@@ -70,10 +68,8 @@ u8 read_transmit_header(u8* warp_header, u16* length) {
 
 u8 read_transmission_control_header(u8* warp_header, u16* length) {
 	u8* transmission_control_data = warp_header + TRANSMIT_HEADER_LENGTH;
-	xil_printf("Processing this ...\n");
-	print_packett(transmission_control_data, 16);
 	u8 total_number_element = transmission_control_data[TRANSMISSION_TOTAL_NUMBER_ELEMENT];
-	u8 operation_code = transmission_control_data[TRANSMISSION_OPERATION_CODE_INDEX];
+//	u8 operation_code = transmission_control_data[TRANSMISSION_OPERATION_CODE_INDEX];
 	u8* current_bssid = transmission_control_data + TRANSMISSION_BSSID_ADDRESS_INDEX;
 	u8 i = 0;
 
@@ -129,6 +125,8 @@ u8 read_mac_control_header(u8* warp_header, u16* length) {
 	print_mac(&mac_addr[0]);
 #endif
 
+	xil_printf("Request mac management with: ");
+	print_packett(warp_header + TRANSMIT_HEADER_LENGTH, 7);
 	wlan_mac_high_mac_manage_control(warp_header + TRANSMIT_HEADER_LENGTH);
 	return MAC_ADDRESS_CONTROL_LENGTH;
 }
@@ -284,7 +282,7 @@ int warp_protocol_process(dl_list* checkout, u8* packet, u16 tx_length) {
 	packet_bd* tx_queue = (packet_bd*)(checkout->first);
 
 #ifdef WARP_PROTOCOL_DEBUG
-	xil_printf("Start reading warp protocol. Type is %d and subtype is %d \n", type, subtype);
+	xil_printf("Start reading warp protocol.\n");
 #endif
 
 	clear_transmit_element(&transmit_info);

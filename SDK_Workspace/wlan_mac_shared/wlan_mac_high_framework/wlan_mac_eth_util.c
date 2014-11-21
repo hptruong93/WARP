@@ -296,7 +296,7 @@ int wlan_mpdu_eth_send(void* mpdu, u16 length){
 
 				default:
 					//Invalid or unsupported Eth type;
-					return -1;
+					return -2;
 				break;
 			}
 		break;

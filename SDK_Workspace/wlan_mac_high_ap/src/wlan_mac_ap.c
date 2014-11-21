@@ -375,45 +375,44 @@ void ltg_event(u32 id, void* callback_arg){
 
 int ethernet_receive(dl_list* tx_queue_list, u8* eth_dest, u8* eth_src, u16 tx_length){
 	return 0;
-	//Receives the pre-encapsulated Ethernet frames
-	station_info* station;
-	//80211
-	packet_bd* tx_queue = (packet_bd*)(tx_queue_list->first);
-
-	wlan_mac_high_setup_tx_header( &tx_header_common, (u8*)(&(eth_dest[0])), &(eeprom_mac_addr[0]), (u8*)(&(eth_src[0])) );
-	wlan_create_data_frame((void*)((tx_packet_buffer*)(tx_queue->buf_ptr))->frame, &tx_header_common, MAC_FRAME_CTRL2_FLAG_FROM_DS);
-
-	if(wlan_addr_eq(bcast_addr, eth_dest)){
-		if(queue_num_queued(0) < max_queue_size){
-			wlan_mac_high_setup_tx_queue ( tx_queue, NULL, tx_length, 0, default_tx_gain_target, 0 );
-
-			enqueue_after_end(0, tx_queue_list);
-			check_tx_queue();
-		} else {
-			return 0;
-		}
-	} else {
-		//Check associations
-		//Is this packet meant for a station we are associated with?
-		station = wlan_mac_high_find_station_info_ADDR(&association_table, eth_dest);
-		if( station != NULL ) {
-			if(queue_num_queued(station->AID) < max_queue_size){
-				wlan_mac_high_setup_tx_queue ( tx_queue, (void*)station, tx_length, MAX_RETRY, default_tx_gain_target,
-								 (TX_MPDU_FLAGS_FILL_DURATION | TX_MPDU_FLAGS_REQ_TO) );
-
-				enqueue_after_end(station->AID, tx_queue_list);
-				check_tx_queue();
-			} else {
-				return 0;
-			}
-		} else {
-			//Checkin this packet_bd so that it can be checked out again
-			return 0;
-		}
-	}
-
-	return 1;
-
+//	//Receives the pre-encapsulated Ethernet frames
+//	station_info* station;
+//	//80211
+//	packet_bd* tx_queue = (packet_bd*)(tx_queue_list->first);
+//
+//	wlan_mac_high_setup_tx_header( &tx_header_common, (u8*)(&(eth_dest[0])), &(eeprom_mac_addr[0]), (u8*)(&(eth_src[0])) );
+//	wlan_create_data_frame((void*)((tx_packet_buffer*)(tx_queue->buf_ptr))->frame, &tx_header_common, MAC_FRAME_CTRL2_FLAG_FROM_DS);
+//
+//	if(wlan_addr_eq(bcast_addr, eth_dest)){
+//		if(queue_num_queued(0) < max_queue_size){
+//			wlan_mac_high_setup_tx_queue ( tx_queue, NULL, tx_length, 0, default_tx_gain_target, 0 );
+//
+//			enqueue_after_end(0, tx_queue_list);
+//			check_tx_queue();
+//		} else {
+//			return 0;
+//		}
+//	} else {
+//		//Check associations
+//		//Is this packet meant for a station we are associated with?
+//		station = wlan_mac_high_find_station_info_ADDR(&association_table, eth_dest);
+//		if( station != NULL ) {
+//			if(queue_num_queued(station->AID) < max_queue_size){
+//				wlan_mac_high_setup_tx_queue ( tx_queue, (void*)station, tx_length, MAX_RETRY, default_tx_gain_target,
+//								 (TX_MPDU_FLAGS_FILL_DURATION | TX_MPDU_FLAGS_REQ_TO) );
+//
+//				enqueue_after_end(station->AID, tx_queue_list);
+//				check_tx_queue();
+//			} else {
+//				return 0;
+//			}
+//		} else {
+//			//Checkin this packet_bd so that it can be checked out again
+//			return 0;
+//		}
+//	}
+//
+//	return 1;
 }
 
 void send_frame_to_wifi(dl_list* checkout, u16 tx_length, transmit_element* transmit_info) {
@@ -477,23 +476,6 @@ void send_frame_to_wifi(dl_list* checkout, u16 tx_length, transmit_element* tran
 	}
 }
 
-//void send_data_to_wifi(dl_list* checkout, packet_bd*	tx_queue, u16 tx_length, transmit_element* transmit_info) {
-//	if (queue_num_queued(0) < max_queue_size) {
-//		wlan_mac_high_setup_tx_header( &tx_header_common, (u8*)(&(transmit_info->dst_mac[0])), (u8*)(&(transmit_info->bssid[0])), (u8*)(&(transmit_info->src_mac[0])) );
-//		wlan_create_data_frame((void*)((tx_packet_buffer*)(tx_queue->buf_ptr))->frame, &tx_header_common, MAC_FRAME_CTRL2_FLAG_FROM_DS);
-//
-//		wlan_mac_high_setup_tx_queue ( tx_queue, NULL, tx_length, transmit_info->retry, default_tx_gain_target,	(TX_MPDU_FLAGS_FILL_DURATION | TX_MPDU_FLAGS_REQ_TO) );
-//
-//		enqueue_after_end(0, checkout);
-//		check_tx_queue();
-//		//xil_printf("pkt_transmitted\n");
-//	} else {
-//		xil_printf("Memory problem???\n");
-//		queue_checkin(checkout);
-//		memory_issue_cnt += 1;
-//	}
-//}
-
 void print_packet(void* packet, u16 tx_length) {
 	u16 i = 0;
 	u8* tx_pkt = packet;
@@ -521,7 +503,7 @@ void mpdu_rx_process(void* pkt_buf_addr, u8 rate, u16 length) {
 	statistics* station_stats = NULL;
 	u8 eth_send;
 
-//	xil_printf("Length is %d\n", length);
+
 
 //	void* rx_event_log_entry;
 
@@ -606,6 +588,8 @@ void mpdu_rx_process(void* pkt_buf_addr, u8 rate, u16 length) {
 		(station_stats->num_rx_bytes) += mpdu_info->length;
 	}
 
+
+	xil_printf("mac is %02x\n", rx_80211_header->address_2[5]);
 	switch(rx_80211_header->frame_control_1) {
 		case (MAC_FRAME_CTRL1_SUBTYPE_DATA): //Data Packet
 			if((rx_80211_header->frame_control_2) & MAC_FRAME_CTRL2_FLAG_TO_DS) {
@@ -630,7 +614,7 @@ void mpdu_rx_process(void* pkt_buf_addr, u8 rate, u16 length) {
 				} else {
 					associated_station = wlan_mac_high_find_station_info_ADDR(&association_table, rx_80211_header->address_3);
 					if(associated_station != NULL){
-						//This is to solve hidden node problem? For now assume that stations can always see each other
+						//This is to solve hidden node problem?
 						queue_checkout(&checkout,1);
 
 						if(checkout.length == 1){ //There was at least 1 free queue element
@@ -654,7 +638,15 @@ void mpdu_rx_process(void* pkt_buf_addr, u8 rate, u16 length) {
 				}
 
 				if(eth_send){
-					wlan_mpdu_eth_send(mpdu,length);
+					if (wlan_mpdu_eth_send(mpdu,length) == -2) {//Not recognized protocol, treat this as a management packet
+						if (length < (1400 - (2 + 2))) {//Make sure that warp layer will not overflow the ethernet frame
+							static u8 warp_layer_data[] = {0x01, 0x01, 0x00, 0x00}; //Transmit header
+							warp_layer_data[2] = (length >> 8) & 0xff;
+							warp_layer_data[3] = length & 0xff;
+
+							eth_pkt_send(mpdu, length, warp_layer_data, 4);
+						}
+					}
 				}
 			}
 
@@ -665,20 +657,11 @@ void mpdu_rx_process(void* pkt_buf_addr, u8 rate, u16 length) {
 			//null data frames (type: DATA, subtype: 0x4) for power management reasons.
 //			warp_printf(PL_VERBOSE, "Received unknown frame control type/subtype %x\n",rx_80211_header->frame_control_1);
 			;
-			//static u8 eth_dst[6]		= {0x00, 0x0a, 0xcd, 0x21, 0x0b, 0x64};//The PC Engine ethernet MAC --REMEMBER to sync this with fragment_sender.c
+			static u8 warp_layer_management[] = {0x01, 0x00, 0x00, 0x00}; //Transmit header
+			warp_layer_management[2] = (length >> 8) & 0xff;
+			warp_layer_management[3] = length & 0xff;
 
-//			ethernet_header* eth_hdr = (ethernet_header*)(mpdu - sizeof(ethernet_header));
-//
-//			memcpy(eth_hdr->address_destination, eth_dst, 6);
-//			memcpy(eth_hdr->address_source, eth_mac_addr, 6);
-//			eth_hdr->type = 0xae08;
-
-//			wlan_eth_dma_send((u8*) eth_hdr, length + sizeof(ethernet_header));
-			static u8 warp_layer[] = {0x01, 0x00, 0x00, 0x00}; //Transmit header
-			warp_layer[2] = (length >> 8) & 0xff;
-			warp_layer[3] = length & 0xff;
-
-			eth_pkt_send(mpdu, length, warp_layer, 4);
+			eth_pkt_send(mpdu, length, warp_layer_management, 4);
 		break;
 	}
 //#ifdef WLAN_MAC_EVENTS_LOG_CHAN_EST
@@ -1108,14 +1091,14 @@ void send_test_packet_9() {
 	u8 warp_data[] = {0x02, 12,      1,     0x40, 0xd8, 0x55, 0x04, 0x22, 0x84,    32,       0x00, 0x21, 0x5d, 0x22, 0x97, 0x8c};
 	xil_printf("Address main is %x\n", &association_table);
 	read_bssid_control_header(warp_data, NULL);
-//	u8 mac[] = {0x00, 0x21, 0x5d, 0x22, 0x97, 0x8c};
-//	remove_association(&association_table, &statistics_table, mac);
+	u8 mac[] = {0x00, 0x21, 0x5d, 0x22, 0x97, 0x8c};
+	remove_association(&association_table, &statistics_table, mac);
 }
 
 void send_test_packet_0() {
-	xil_printf("Disassociating station 0x00, 0x21, 0x5d, 0x22, 0x97, 0x8c\n");
-	//                              1 station              BSSID                   DISASSOCIATE              Station mac
-	u8 warp_data[] = {0x02, 12,      1,     0x40, 0xd8, 0x55, 0x04, 0x22, 0x86,    32,       0x00, 0x21, 0x5d, 0x22, 0x97, 0x8c};
-	read_bssid_control_header(warp_data, NULL);
+//	xil_printf("Disassociating station 0x00, 0x21, 0x5d, 0x22, 0x97, 0x8c\n");
+//	//                              1 station              BSSID                   DISASSOCIATE              Station mac
+//	u8 warp_data[] = {0x02, 12,      1,     0x40, 0xd8, 0x55, 0x04, 0x22, 0x86,    32,       0x00, 0x21, 0x5d, 0x22, 0x97, 0x8c};
+//	read_bssid_control_header(warp_data, NULL);
 }
 #endif

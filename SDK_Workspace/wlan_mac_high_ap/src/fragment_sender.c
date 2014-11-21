@@ -47,7 +47,6 @@ int eth_pkt_send(void* data, u16 length, u8* warp_protocol_layer, u8 warp_protoc
 		eth_hdr->type = 0xae08;//Magic??? It's 0x8ae
 
 		if (warp_protocol_layer_length != 0) {
-			xil_printf("Copying warp header\n");
 			//copy warp_header;
 			memcpy((void*)(eth_tx_ptr + sizeof(ethernet_header)), (void*) (warp_protocol_layer), warp_protocol_layer_length);
 		}
